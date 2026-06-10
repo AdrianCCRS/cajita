@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Button, Card, CardBody, EmptyState, Input, MoneyField, ScreenHero } from "../../shared/components/ui";
+import { Button, Card, CardContent, EmptyState, Input, Label, MoneyField, ScreenHero, TextField } from "../../shared/components/ui";
 import { useSpaData } from "../../shared/data/SpaDataContext";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
 import { getServiceMargin } from "../../shared/utils/financials";
@@ -56,43 +56,45 @@ export function ServicesPlaceholder() {
     <section className="screen-stack" aria-labelledby="services-title">
       <ScreenHero title="Servicios">Configura nombres, precios y costos aproximados. Las ventas guardan copia histórica.</ScreenHero>
 
-      <Card className="ui-card form-card" shadow="none">
-        <CardBody>
+      <Card className="ui-card form-card">
+        <CardContent>
           <form className="form-stack" onSubmit={handleSubmit}>
             <h3>{editingId ? "Editar servicio" : "Agregar servicio"}</h3>
-            <Input
-              autoComplete="off"
+            <TextField
               className="form-control"
               isRequired
-              label="Nombre del servicio"
               name="service-name"
-              radius="sm"
-              value={name}
-              variant="bordered"
-              onValueChange={setName}
-            />
+            >
+              <Label>Nombre del servicio</Label>
+              <Input
+                autoComplete="off"
+                value={name}
+                variant="secondary"
+                onChange={(e) => setName(e.target.value)}
+              />
+            </TextField>
             <MoneyField isRequired label="Precio" min={1} value={defaultPrice} onValueChange={setDefaultPrice} />
             <MoneyField isRequired label="Costo aproximado" value={estimatedCost} onValueChange={setEstimatedCost} />
             {error ? <p className="error-text">{error}</p> : null}
             <div className="button-row">
-              <Button color="primary" radius="sm" type="submit">
+              <Button type="submit">
                 {editingId ? "Guardar cambios" : "Agregar servicio"}
               </Button>
               {editingId ? (
-                <Button radius="sm" variant="light" onPress={resetForm}>
+                <Button variant="ghost" onPress={resetForm}>
                   Cancelar
                 </Button>
               ) : null}
             </div>
           </form>
-        </CardBody>
+        </CardContent>
       </Card>
 
       <div className="list-stack">
         {services.length ? (
           services.map((service) => (
-            <Card className={service.isActive ? "ui-card list-row" : "ui-card list-row muted"} key={service.id} shadow="none">
-              <CardBody>
+            <Card className={service.isActive ? "ui-card list-row" : "ui-card list-row muted"} key={service.id}>
+              <CardContent>
                 <div>
                   <span>{service.isActive ? "Activo" : "Inactivo"}</span>
                   <strong>{service.name}</strong>
@@ -100,16 +102,16 @@ export function ServicesPlaceholder() {
                 </div>
                 <div className="row-actions">
                   <b>{formatCurrency(service.defaultPrice)}</b>
-                  <Button radius="sm" size="sm" variant="bordered" onPress={() => editService(service.id)}>
+                  <Button size="sm" variant="outline" onPress={() => editService(service.id)}>
                     Editar
                   </Button>
                   {service.isActive ? (
-                    <Button color="danger" radius="sm" size="sm" variant="light" onPress={() => void deactivateService(service.id)}>
+                    <Button variant="danger" size="sm" onPress={() => void deactivateService(service.id)}>
                       Desactivar
                     </Button>
                   ) : null}
                 </div>
-              </CardBody>
+              </CardContent>
             </Card>
           ))
         ) : (

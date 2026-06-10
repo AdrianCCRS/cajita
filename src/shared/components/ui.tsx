@@ -1,24 +1,19 @@
 import {
   Button,
   Card,
-  CardBody,
+  CardContent,
   CardFooter,
   CardHeader,
   Chip,
   Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
+  FieldError,
   Input,
+  Label,
   Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  Progress,
+  ProgressBar,
   Skeleton,
-  Textarea,
+  TextArea,
+  TextField,
 } from "@heroui/react";
 import { AlertTriangle, CheckCircle2, HelpCircle, Info, Plus, X } from "lucide-react";
 import type { ReactNode } from "react";
@@ -36,19 +31,19 @@ type MetricCardProps = {
 
 export function MetricCard({ title, value, description, tone = "neutral", helpLabel, onHelp }: MetricCardProps) {
   return (
-    <Card className={`ui-card metric-card metric-card--${tone}`} shadow="none">
-      <CardBody className="metric-card__body">
+    <Card className={`ui-card metric-card metric-card--${tone}`}>
+      <CardContent className="metric-card__body">
         <div className="metric-card__topline">
           <span>{title}</span>
           {onHelp ? (
-            <Button isIconOnly aria-label={helpLabel ?? `Explicar ${title}`} className="ghost-icon" size="sm" variant="light" onPress={onHelp}>
+            <Button isIconOnly aria-label={helpLabel ?? `Explicar ${title}`} className="ghost-icon" size="sm" variant="ghost" onPress={onHelp}>
               <Info aria-hidden="true" size={17} />
             </Button>
           ) : null}
         </div>
         <strong>{value}</strong>
         {description ? <p>{description}</p> : null}
-      </CardBody>
+      </CardContent>
     </Card>
   );
 }
@@ -62,31 +57,31 @@ type EmptyStateProps = {
 
 export function EmptyState({ title, message, actionLabel, onAction }: EmptyStateProps) {
   return (
-    <Card className="ui-card empty-state" shadow="none">
-      <CardBody>
+    <Card className="ui-card empty-state">
+      <CardContent>
         <div className="empty-state__icon" aria-hidden="true">
           <HelpCircle size={24} />
         </div>
         <strong>{title}</strong>
         <p>{message}</p>
         {actionLabel && onAction ? (
-          <Button color="primary" radius="sm" onPress={onAction}>
+          <Button onPress={onAction}>
             {actionLabel}
           </Button>
         ) : null}
-      </CardBody>
+      </CardContent>
     </Card>
   );
 }
 
 export function SkeletonCard() {
   return (
-    <Card className="ui-card skeleton-card" shadow="none">
-      <CardBody>
+    <Card className="ui-card skeleton-card">
+      <CardContent>
         <Skeleton className="skeleton-line short" />
         <Skeleton className="skeleton-line tall" />
         <Skeleton className="skeleton-line" />
-      </CardBody>
+      </CardContent>
     </Card>
   );
 }
@@ -115,23 +110,25 @@ export function MoneyField({
   isRequired,
 }: MoneyFieldProps) {
   return (
-    <Input
+    <TextField
       className="form-control"
-      errorMessage={errorMessage}
-      inputMode="numeric"
       isInvalid={isInvalid}
       isRequired={isRequired}
-      label={label}
-      min={min}
       name={name ?? slugName(label)}
-      placeholder={placeholder}
-      radius="sm"
-      type="number"
-      value={String(value)}
-      variant="bordered"
-      autoComplete="off"
-      onValueChange={onValueChange}
-    />
+    >
+      <Label>{label}</Label>
+      <Input
+        autoComplete="off"
+        inputMode="numeric"
+        min={min}
+        placeholder={placeholder}
+        type="number"
+        value={String(value)}
+        variant="secondary"
+        onChange={(e) => onValueChange(e.target.value)}
+      />
+      {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
+    </TextField>
   );
 }
 
@@ -146,17 +143,27 @@ type BottomSheetProps = {
 
 export function BottomSheet({ isOpen, title, eyebrow, children, footer, onClose }: BottomSheetProps) {
   return (
-    <Drawer className="bottom-sheet" isOpen={isOpen} placement="bottom" size="2xl" onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent>
-        <DrawerHeader className="sheet-title">
-          <div>
-            {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
-            <h2>{title}</h2>
-          </div>
-        </DrawerHeader>
-        <DrawerBody>{children}</DrawerBody>
-        {footer ? <DrawerFooter>{footer}</DrawerFooter> : null}
-      </DrawerContent>
+    <Drawer>
+      <Drawer.Backdrop
+        isOpen={isOpen}
+        onOpenChange={(open) => {
+          if (!open) onClose();
+        }}
+      >
+        <Drawer.Content placement="bottom">
+          <Drawer.Dialog className="bottom-sheet">
+            <Drawer.Handle />
+            <Drawer.Header className="sheet-title">
+              <Drawer.Heading>
+                {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
+                <h2>{title}</h2>
+              </Drawer.Heading>
+            </Drawer.Header>
+            <Drawer.Body>{children}</Drawer.Body>
+            {footer ? <Drawer.Footer>{footer}</Drawer.Footer> : null}
+          </Drawer.Dialog>
+        </Drawer.Content>
+      </Drawer.Backdrop>
     </Drawer>
   );
 }
@@ -172,21 +179,32 @@ type ConfirmDialogProps = {
 
 export function ConfirmDialog({ isOpen, title, message, confirmLabel = "Eliminar", onCancel, onConfirm }: ConfirmDialogProps) {
   return (
-    <Modal isOpen={isOpen} placement="center" onOpenChange={(open) => !open && onCancel()}>
-      <ModalContent>
-        <ModalHeader>{title}</ModalHeader>
-        <ModalBody>
-          <p className="dialog-copy">{message}</p>
-        </ModalBody>
-        <ModalFooter>
-          <Button radius="sm" variant="light" onPress={onCancel}>
-            Cancelar
-          </Button>
-          <Button color="danger" radius="sm" onPress={onConfirm}>
-            {confirmLabel}
-          </Button>
-        </ModalFooter>
-      </ModalContent>
+    <Modal>
+      <Modal.Backdrop
+        isOpen={isOpen}
+        onOpenChange={(open) => {
+          if (!open) onCancel();
+        }}
+      >
+        <Modal.Container placement="center">
+          <Modal.Dialog>
+            <Modal.Header>
+              <Modal.Heading>{title}</Modal.Heading>
+            </Modal.Header>
+            <Modal.Body>
+              <p className="dialog-copy">{message}</p>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="ghost" onPress={onCancel}>
+                Cancelar
+              </Button>
+              <Button variant="danger" onPress={onConfirm}>
+                {confirmLabel}
+              </Button>
+            </Modal.Footer>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
     </Modal>
   );
 }
@@ -205,17 +223,17 @@ export function HelpDrawer({ isOpen, title, definition, example, decision, onClo
     <BottomSheet isOpen={isOpen} title={title} eyebrow="Ayuda rápida" onClose={onClose}>
       <div className="help-drawer">
         <p>{definition}</p>
-        <Card className="ui-card" shadow="none">
-          <CardBody>
+        <Card className="ui-card">
+          <CardContent>
             <span>Ejemplo en tu spa</span>
             <strong>{example}</strong>
-          </CardBody>
+          </CardContent>
         </Card>
-        <Card className="ui-card" shadow="none">
-          <CardBody>
+        <Card className="ui-card">
+          <CardContent>
             <span>Te ayuda a decidir</span>
             <strong>{decision}</strong>
-          </CardBody>
+          </CardContent>
         </Card>
       </div>
     </BottomSheet>
@@ -241,11 +259,11 @@ export function ToastRegion({ toast, onDismiss }: { toast: ToastMessage | null; 
       <Icon aria-hidden="true" size={20} />
       <p>{toast.message}</p>
       {toast.actionLabel && toast.onAction ? (
-        <Button size="sm" variant="light" onPress={toast.onAction}>
+        <Button size="sm" variant="ghost" onPress={toast.onAction}>
           {toast.actionLabel}
         </Button>
       ) : null}
-      <Button isIconOnly aria-label="Cerrar mensaje" className="toast-close" size="sm" variant="light" onPress={onDismiss}>
+      <Button isIconOnly aria-label="Cerrar mensaje" className="toast-close" size="sm" variant="ghost" onPress={onDismiss}>
         <X aria-hidden="true" size={16} />
       </Button>
     </div>
@@ -254,26 +272,27 @@ export function ToastRegion({ toast, onDismiss }: { toast: ToastMessage | null; 
 
 export function ScreenHero({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Card className="ui-card hero-panel" shadow="none">
+    <Card className="ui-card hero-panel">
       <CardHeader>
         <h2>{title}</h2>
       </CardHeader>
-      <CardBody>
+      <CardContent>
         <p>{children}</p>
-      </CardBody>
+      </CardContent>
     </Card>
   );
 }
 
 export function AddButton({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Button color="primary" radius="full" startContent={<Plus aria-hidden="true" size={18} />} onPress={onPress}>
+    <Button onPress={onPress}>
+      <Plus aria-hidden="true" size={18} />
       {label}
     </Button>
   );
 }
 
-export { Button, Card, CardBody, CardFooter, CardHeader, Chip, Input, Progress, Textarea };
+export { Button, Card, CardContent, CardFooter, CardHeader, Chip, FieldError, Input, Label, ProgressBar, TextArea, TextField };
 
 function slugName(value: string) {
   return value

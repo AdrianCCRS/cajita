@@ -1,7 +1,7 @@
 import { Plus, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "../../shared/auth/AuthContext";
-import { Button, Card, CardBody, CardHeader, Chip, Input, MoneyField, Progress } from "../../shared/components/ui";
+import { Button, Card, CardContent, CardHeader, Chip, Input, Label, MoneyField, ProgressBar, TextField } from "../../shared/components/ui";
 import { db } from "../../shared/lib/firebase";
 import type { ExpenseCategory, FixedExpense, Service } from "../../shared/types/domain";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
@@ -187,16 +187,16 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
             <p className="eyebrow">Primeros datos</p>
             <h1 id="onboarding-title">Configura tu spa</h1>
           </div>
-          <Button radius="sm" variant="light" onPress={() => void signOut()}>
+          <Button variant="ghost" onPress={() => void signOut()}>
             Salir
           </Button>
         </header>
 
         <div className="stepper" aria-label="Progreso de configuración">
-          <Progress aria-label="Progreso" color="primary" value={progress} />
+          <ProgressBar aria-label="Progreso" color="accent" value={progress} />
           <div className="stepper__labels">
             {steps.map((label, index) => (
-              <Chip className={index === step ? "active" : ""} color={index <= step ? "primary" : "default"} key={label} size="sm" variant="flat">
+              <Chip className={index === step ? "active" : ""} color={index <= step ? "accent" : "default"} key={label} size="sm" variant="secondary">
                 {label}
               </Chip>
             ))}
@@ -205,44 +205,46 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
         <form className="onboarding-form" onSubmit={handleSubmit}>
           {step === 0 ? (
-            <Card className="ui-card onboarding-step" shadow="none">
+            <Card className="ui-card onboarding-step">
               <CardHeader>
                 <h2>Tu negocio</h2>
               </CardHeader>
-              <CardBody>
-                <Input
-                  autoComplete="organization"
+              <CardContent>
+                <TextField
                   className="form-control"
                   isRequired
-                  label="Nombre del negocio"
                   name="business-name"
-                  radius="sm"
-                  value={businessName}
-                  variant="bordered"
-                  onValueChange={setBusinessName}
-                />
+                >
+                  <Label>Nombre del negocio</Label>
+                  <Input
+                    autoComplete="organization"
+                    value={businessName}
+                    variant="secondary"
+                    onChange={(e) => setBusinessName(e.target.value)}
+                  />
+                </TextField>
                 <MoneyField
                   isRequired
                   label="¿Cuánto quieres ganarte al mes?"
                   value={ownerSalaryTarget}
                   onValueChange={setOwnerSalaryTarget}
                 />
-                <Card className="ui-card setup-summary" shadow="none">
-                  <CardBody>
+                <Card className="ui-card setup-summary">
+                  <CardContent>
                     <span>Moneda</span>
                     <strong>COP</strong>
-                  </CardBody>
+                  </CardContent>
                 </Card>
-              </CardBody>
+              </CardContent>
             </Card>
           ) : null}
 
           {step === 1 ? (
-            <Card className="ui-card onboarding-step" shadow="none">
+            <Card className="ui-card onboarding-step">
               <CardHeader>
                 <h2>Servicios iniciales</h2>
               </CardHeader>
-              <CardBody>
+              <CardContent>
                 <div className="add-row">
                   <Input
                     aria-label="Nuevo servicio"
@@ -250,72 +252,71 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                     className="form-control"
                     name="new-service"
                     placeholder="Ej. Manicura tradicional"
-                    radius="sm"
                     value={newServiceName}
-                    variant="bordered"
-                    onValueChange={setNewServiceName}
+                    variant="secondary"
+                    onChange={(e) => setNewServiceName(e.target.value)}
                   />
-                  <Button isIconOnly aria-label="Agregar servicio" color="primary" radius="sm" onPress={addService}>
+                  <Button isIconOnly aria-label="Agregar servicio" onPress={addService}>
                     <Plus aria-hidden="true" size={20} />
                   </Button>
                 </div>
                 <div className="editable-list">
                   {activeServices.map((service) => (
-                    <Card className="ui-card editable-item" key={service.id} shadow="none">
-                      <CardBody>
-                        <Input
-                          autoComplete="off"
+                    <Card className="ui-card editable-item" key={service.id}>
+                      <CardContent>
+                        <TextField
                           className="form-control"
-                          label="Servicio"
                           name={`service-${service.id}-name`}
-                          radius="sm"
-                          value={service.name}
-                          variant="bordered"
-                          onValueChange={(value) => updateService(service.id, { name: value })}
-                        />
+                        >
+                          <Label>Servicio</Label>
+                          <Input
+                            autoComplete="off"
+                            value={service.name}
+                            variant="secondary"
+                            onChange={(e: { target: { value: string } }) => updateService(service.id, { name: e.target.value })}
+                          />
+                        </TextField>
                         <div className="two-column">
                           <MoneyField
                             isRequired
                             label="Precio"
                             min={1}
                             value={service.defaultPrice}
-                            onValueChange={(value) => updateService(service.id, { defaultPrice: Number(value) })}
+                            onValueChange={(value: string) => updateService(service.id, { defaultPrice: Number(value) })}
                           />
                           <MoneyField
                             label="Costo"
                             value={service.estimatedCost}
-                            onValueChange={(value) => updateService(service.id, { estimatedCost: Number(value) })}
+                            onValueChange={(value: string) => updateService(service.id, { estimatedCost: Number(value) })}
                           />
                         </div>
                         <Button
                           className="danger-inline"
-                          color="danger"
-                          radius="sm"
-                          startContent={<Trash2 aria-hidden="true" size={17} />}
-                          variant="light"
+                          variant="danger"
                           onPress={() => updateService(service.id, { isActive: false })}
                         >
+                          <Trash2 aria-hidden="true" size={17} />
                           Quitar
                         </Button>
-                      </CardBody>
+                      </CardContent>
                     </Card>
                   ))}
                 </div>
-              </CardBody>
+              </CardContent>
             </Card>
           ) : null}
 
           {step === 2 ? (
-            <Card className="ui-card onboarding-step" shadow="none">
+            <Card className="ui-card onboarding-step">
               <CardHeader>
                 <h2>Gastos fijos</h2>
               </CardHeader>
-              <CardBody>
-                <Card className="ui-card setup-summary" shadow="none">
-                  <CardBody>
+              <CardContent>
+                <Card className="ui-card setup-summary">
+                  <CardContent>
                     <span>Total mensual</span>
                     <strong>{formatCurrency(totalFixedExpenses)}</strong>
-                  </CardBody>
+                  </CardContent>
                 </Card>
                 <div className="add-row">
                   <Input
@@ -324,101 +325,100 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                     className="form-control"
                     name="new-fixed-expense"
                     placeholder="Ej. Arriendo"
-                    radius="sm"
                     value={newExpenseName}
-                    variant="bordered"
-                    onValueChange={setNewExpenseName}
+                    variant="secondary"
+                    onChange={(e) => setNewExpenseName(e.target.value)}
                   />
-                  <Button isIconOnly aria-label="Agregar gasto fijo" color="primary" radius="sm" onPress={addFixedExpense}>
+                  <Button isIconOnly aria-label="Agregar gasto fijo" onPress={addFixedExpense}>
                     <Plus aria-hidden="true" size={20} />
                   </Button>
                 </div>
                 <div className="editable-list">
                   {visibleFixedExpenses.map((expense) => (
-                    <Card className="ui-card editable-item compact-item" key={expense.id} shadow="none">
-                      <CardBody>
-                        <Input
-                          autoComplete="off"
+                    <Card className="ui-card editable-item compact-item" key={expense.id}>
+                      <CardContent>
+                        <TextField
                           className="form-control"
-                          label="Gasto"
                           name={`fixed-expense-${expense.id}-name`}
-                          radius="sm"
-                          value={expense.name}
-                          variant="bordered"
-                          onValueChange={(value) => updateFixedExpense(expense.id, { name: value })}
-                        />
+                        >
+                          <Label>Gasto</Label>
+                          <Input
+                            autoComplete="off"
+                            value={expense.name}
+                            variant="secondary"
+                            onChange={(e: { target: { value: string } }) => updateFixedExpense(expense.id, { name: e.target.value })}
+                          />
+                        </TextField>
                         <MoneyField
                           label="Valor"
                           value={expense.amount}
-                          onValueChange={(value) => updateFixedExpense(expense.id, { amount: Number(value) })}
+                          onValueChange={(value: string) => updateFixedExpense(expense.id, { amount: Number(value) })}
                         />
                         <Button
                           className="danger-inline"
-                          color="danger"
-                          radius="sm"
-                          startContent={<Trash2 aria-hidden="true" size={17} />}
-                          variant="light"
+                          variant="danger"
                           onPress={() => updateFixedExpense(expense.id, { isActive: false })}
                         >
+                          <Trash2 aria-hidden="true" size={17} />
                           Quitar
                         </Button>
-                      </CardBody>
+                      </CardContent>
                     </Card>
                   ))}
                 </div>
-              </CardBody>
+              </CardContent>
             </Card>
           ) : null}
 
           {step === 3 ? (
-            <Card className="ui-card onboarding-step" shadow="none">
+            <Card className="ui-card onboarding-step">
               <CardHeader>
                 <h2>Resumen</h2>
               </CardHeader>
-              <CardBody>
+              <CardContent>
                 <div className="summary-grid">
-                  <Card className="ui-card setup-summary" shadow="none">
-                    <CardBody>
+                  <Card className="ui-card setup-summary">
+                    <CardContent>
                       <span>Negocio</span>
                       <strong>{businessName}</strong>
-                    </CardBody>
+                    </CardContent>
                   </Card>
-                  <Card className="ui-card setup-summary" shadow="none">
-                    <CardBody>
+                  <Card className="ui-card setup-summary">
+                    <CardContent>
                       <span>Servicios activos</span>
                       <strong>{activeServices.length}</strong>
-                    </CardBody>
+                    </CardContent>
                   </Card>
-                  <Card className="ui-card setup-summary" shadow="none">
-                    <CardBody>
+                  <Card className="ui-card setup-summary">
+                    <CardContent>
                       <span>Gastos fijos</span>
                       <strong>{formatCurrency(totalFixedExpenses)}</strong>
-                    </CardBody>
+                    </CardContent>
                   </Card>
-                  <Card className="ui-card setup-summary" shadow="none">
-                    <CardBody>
+                  <Card className="ui-card setup-summary">
+                    <CardContent>
                       <span>Mi salario objetivo</span>
                       <strong>{formatCurrency(Number(ownerSalaryTarget) || 0)}</strong>
-                    </CardBody>
+                    </CardContent>
                   </Card>
                 </div>
                 <p className="hint-text">Si algo no está perfecto, puedes ajustarlo después en Configuración.</p>
-              </CardBody>
+              </CardContent>
             </Card>
           ) : null}
 
           {error ? <p className="error-text">{error}</p> : null}
 
           <footer className="onboarding-actions">
-            <Button isDisabled={step === 0 || isSubmitting} radius="sm" variant="bordered" onPress={previousStep}>
+            <Button isDisabled={step === 0 || isSubmitting} variant="secondary" onPress={previousStep}>
               Anterior
             </Button>
             {step < steps.length - 1 ? (
-              <Button color="primary" radius="sm" onPress={nextStep}>
+              <Button onPress={nextStep}>
                 Siguiente
               </Button>
             ) : (
-              <Button color="primary" isLoading={isSubmitting} radius="sm" type="submit">
+              <Button isPending={isSubmitting} type="submit">
                 Entrar al dashboard
               </Button>
             )}

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 import { useAuth } from "../../shared/auth/AuthContext";
-import { Button, Card, CardBody, Input } from "../../shared/components/ui";
+import { Button, Card, CardContent, Input, Label, TextField } from "../../shared/components/ui";
 import { authSchema } from "../../shared/validation/schemas";
 
 export function LoginScreen() {
@@ -61,57 +61,61 @@ export function LoginScreen() {
 
   return (
     <main className="auth-screen">
-      <Card className="auth-panel ui-card" shadow="none" aria-labelledby="login-title">
-        <CardBody>
+      <Card className="auth-panel ui-card" aria-labelledby="login-title">
+        <CardContent>
           <p className="eyebrow">Control financiero</p>
           <h1 id="login-title">Spa Control</h1>
           <p>{mode === "login" ? "Entra para ver cómo va tu negocio hoy." : "Crea tu cuenta privada para empezar."}</p>
 
           <form className="form-stack" onSubmit={handleSubmit}>
-            <Input
-              autoComplete="email"
+            <TextField
               className="form-control"
-              inputMode="email"
               isRequired
-              label="Correo"
               name="email"
-              radius="sm"
-              spellCheck="false"
-              type="email"
-              value={email}
-              variant="bordered"
-              onValueChange={setEmail}
-            />
-            <Input
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
+            >
+              <Label>Correo</Label>
+              <Input
+                autoComplete="email"
+                inputMode="email"
+                spellCheck="false"
+                type="email"
+                value={email}
+                variant="secondary"
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </TextField>
+            <TextField
               className="form-control"
               isRequired
-              label="Contraseña"
               name="password"
-              radius="sm"
-              type="password"
-              value={password}
-              variant="bordered"
-              onValueChange={setPassword}
-            />
+            >
+              <Label>Contraseña</Label>
+              <Input
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                type="password"
+                value={password}
+                variant="secondary"
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </TextField>
 
             {error || authError ? <p className="error-text">{error || authError}</p> : null}
             {message ? <p className="success-text">{message}</p> : null}
 
-            <Button color="primary" isLoading={isSubmitting} radius="sm" type="submit">
+            <Button isPending={isSubmitting} type="submit">
               {mode === "login" ? "Entrar" : "Crear cuenta"}
             </Button>
           </form>
 
           <div className="auth-actions">
-            <Button radius="sm" variant="light" onPress={() => setMode(mode === "login" ? "register" : "login")}>
+            <Button variant="ghost" onPress={() => setMode(mode === "login" ? "register" : "login")}>
               {mode === "login" ? "Crear cuenta" : "Ya tengo cuenta"}
             </Button>
-            <Button isDisabled={isSubmitting} radius="sm" variant="light" onPress={handleResetPassword}>
+            <Button isDisabled={isSubmitting} variant="ghost" onPress={handleResetPassword}>
               Recuperar contraseña
             </Button>
           </div>
-        </CardBody>
+        </CardContent>
       </Card>
     </main>
   );

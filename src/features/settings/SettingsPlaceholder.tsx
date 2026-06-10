@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Button, Card, CardBody, Input, MetricCard, MoneyField, ScreenHero } from "../../shared/components/ui";
+import { Button, Card, CardContent, Input, Label, MetricCard, MoneyField, ScreenHero, TextField } from "../../shared/components/ui";
 import { useSpaData } from "../../shared/data/SpaDataContext";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
 import { getTotalFixedExpenses } from "../../shared/utils/financials";
@@ -63,31 +63,33 @@ export function SettingsPlaceholder() {
         <MetricCard title="Mi salario objetivo" tone="salary" value={formatCurrency(financialSettings.salaryTarget)} />
       </div>
 
-      <Card className="ui-card form-card" shadow="none">
-        <CardBody>
+      <Card className="ui-card form-card">
+        <CardContent>
           <form className="form-stack" onSubmit={handleFixedExpense}>
             <h3>{editingExpenseId ? "Editar gasto fijo" : "Gastos fijos mensuales"}</h3>
-            <Input
-              autoComplete="off"
+            <TextField
               className="form-control"
               isRequired
-              label="Nombre"
               name="fixed-expense-name"
-              radius="sm"
-              value={expenseName}
-              variant="bordered"
-              onValueChange={setExpenseName}
-            />
+            >
+              <Label>Nombre</Label>
+              <Input
+                autoComplete="off"
+                value={expenseName}
+                variant="secondary"
+                onChange={(e) => setExpenseName(e.target.value)}
+              />
+            </TextField>
             <MoneyField isRequired label="Valor" min={0} value={expenseAmount} onValueChange={setExpenseAmount} />
             {error ? <p className="error-text">{error}</p> : null}
             <div className="button-row">
-              <Button color="primary" radius="sm" type="submit">
+              <Button type="submit">
                 {editingExpenseId ? "Guardar gasto" : "Agregar gasto fijo"}
               </Button>
               {editingExpenseId ? (
                 <Button
-                  radius="sm"
-                  variant="light"
+                 
+                  variant="ghost"
                   onPress={() => {
                     setEditingExpenseId(undefined);
                     setExpenseName("");
@@ -100,39 +102,39 @@ export function SettingsPlaceholder() {
               ) : null}
             </div>
           </form>
-        </CardBody>
+        </CardContent>
       </Card>
 
       <div className="list-stack">
         {fixedExpenses.map((expense) => (
-          <Card className="ui-card list-row" key={expense.id} shadow="none">
-            <CardBody>
+          <Card className="ui-card list-row" key={expense.id}>
+            <CardContent>
               <div>
                 <span>Mensual</span>
                 <strong>{expense.name}</strong>
               </div>
               <div className="row-actions">
                 <b>{formatCurrency(expense.amount)}</b>
-                <Button radius="sm" size="sm" variant="bordered" onPress={() => editExpense(expense.id)}>
+                <Button size="sm" variant="outline" onPress={() => editExpense(expense.id)}>
                   Editar
                 </Button>
               </div>
-            </CardBody>
+            </CardContent>
           </Card>
         ))}
       </div>
 
-      <Card className="ui-card form-card" shadow="none">
-        <CardBody>
+      <Card className="ui-card form-card">
+        <CardContent>
           <form className="form-stack" onSubmit={handleSalary}>
             <h3>Mi salario</h3>
             <MoneyField isRequired label="¿Cuánto quieres ganarte al mes?" value={salaryTarget} onValueChange={setSalaryTarget} />
             {salaryMessage ? <p className={salaryMessage.includes("guardados") ? "success-text" : "error-text"}>{salaryMessage}</p> : null}
-            <Button color="primary" radius="sm" type="submit">
+            <Button type="submit">
               Guardar salario
             </Button>
           </form>
-        </CardBody>
+        </CardContent>
       </Card>
     </section>
   );

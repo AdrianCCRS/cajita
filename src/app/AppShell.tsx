@@ -7,7 +7,7 @@ import type { ExpenseType, PaymentMethod, Transaction, TransactionType } from ".
 import { formatCurrency } from "../shared/utils/formatCurrency";
 import { getEstimatedProfit, getMonthlyExpenses, getMonthlyIncome, getMonthlyWithdrawals } from "../shared/utils/financials";
 import { transactionSchema } from "../shared/validation/schemas";
-import { BottomSheet, Button, Card, CardBody, Chip, MoneyField, SkeletonCard, Textarea, ToastRegion } from "../shared/components/ui";
+import { BottomSheet, Button, Card, CardContent, Chip, Label, MoneyField, SkeletonCard, TextArea, TextField, ToastRegion } from "../shared/components/ui";
 
 const navItems = [
   { to: "/", label: "Inicio", icon: Home },
@@ -48,11 +48,11 @@ export function AppShell() {
           <h1>Spa Control</h1>
         </div>
         <div className="header-actions">
-          <Chip color={source === "firebase" ? "success" : "warning"} size="sm" variant="flat">
+          <Chip color={source === "firebase" ? "success" : "warning"} size="sm" variant="secondary">
             {source === "firebase" ? "Firebase" : "Demo local"}
           </Chip>
           {isFirebaseEnabled ? (
-            <Button radius="sm" size="sm" variant="bordered" onPress={() => void signOut()}>
+            <Button size="sm" variant="outline" onPress={() => void signOut()}>
               Salir
             </Button>
           ) : null}
@@ -67,14 +67,14 @@ export function AppShell() {
           </div>
         ) : null}
         {error ? (
-          <Card className="ui-card error-panel" shadow="none">
-            <CardBody>
+          <Card className="ui-card error-panel">
+            <CardContent>
               <strong>Algo salió mal.</strong>
               <p>{error}</p>
-              <Button radius="sm" variant="bordered" onPress={() => window.location.reload()}>
+              <Button variant="outline" onPress={() => window.location.reload()}>
                 Reintentar
               </Button>
-            </CardBody>
+            </CardContent>
           </Card>
         ) : null}
         <Outlet context={{ openRegister, showToast }} />
@@ -121,13 +121,13 @@ function QuickActionFab({ onSelect }: { onSelect: (type: TransactionType) => voi
     <div className="fab-cluster">
       {isExpanded ? (
         <div className="fab-menu" aria-label="Acciones rápidas">
-          <Button color="success" radius="full" onPress={() => choose("income")}>
+          <Button onPress={() => choose("income")}>
             Venta
           </Button>
-          <Button color="warning" radius="full" onPress={() => choose("expense")}>
+          <Button variant="secondary" onPress={() => choose("expense")}>
             Gasto
           </Button>
-          <Button color="secondary" radius="full" onPress={() => choose("withdrawal")}>
+          <Button variant="secondary" onPress={() => choose("withdrawal")}>
             Pagarme
           </Button>
         </div>
@@ -136,8 +136,7 @@ function QuickActionFab({ onSelect }: { onSelect: (type: TransactionType) => voi
         isIconOnly
         aria-label={isExpanded ? "Cerrar acciones rápidas" : "Registrar movimiento"}
         className="quick-action"
-        color="primary"
-        radius="full"
+       
         onPress={() => setIsExpanded((current) => !current)}
       >
         {isExpanded ? <X aria-hidden="true" size={26} /> : <CircleDollarSign aria-hidden="true" size={26} />}
@@ -240,16 +239,15 @@ function RegisterMovementSheet({
     <BottomSheet isOpen title="Nuevo movimiento" eyebrow="Registro rápido" onClose={onClose}>
       <form className="form-stack register-form" onSubmit={handleSubmit}>
         <div className="segmented" aria-label="Tipo de movimiento">
-          <Button color={type === "income" ? "success" : "default"} radius="sm" variant={type === "income" ? "solid" : "flat"} onPress={() => changeType("income")}>
+          <Button variant={type === "income" ? "primary" : "tertiary"} onPress={() => changeType("income")}>
             Venta
           </Button>
-          <Button color={type === "expense" ? "warning" : "default"} radius="sm" variant={type === "expense" ? "solid" : "flat"} onPress={() => changeType("expense")}>
+          <Button variant={type === "expense" ? "primary" : "tertiary"} onPress={() => changeType("expense")}>
             Gasto
           </Button>
           <Button
-            color={type === "withdrawal" ? "secondary" : "default"}
-            radius="sm"
-            variant={type === "withdrawal" ? "solid" : "flat"}
+           
+            variant={type === "withdrawal" ? "primary" : "tertiary"}
             onPress={() => changeType("withdrawal")}
           >
             Pagarme
@@ -319,17 +317,19 @@ function RegisterMovementSheet({
           required
         />
 
-        <Textarea
+        <TextField
           className="form-control"
-          label="Nota opcional"
-          minRows={2}
           name="transaction-notes"
-          radius="sm"
-          value={notes}
-          variant="bordered"
-          autoComplete="off"
-          onValueChange={setNotes}
-        />
+        >
+          <Label>Nota opcional</Label>
+          <TextArea
+            autoComplete="off"
+            rows={2}
+            value={notes}
+            variant="secondary"
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)}
+          />
+        </TextField>
 
         {type === "withdrawal" && Number(amount) > monthly.available ? (
           <p className="warning-text">Este pago supera el dinero disponible del negocio. Puedes guardarlo si así lo decides.</p>
@@ -341,7 +341,7 @@ function RegisterMovementSheet({
         ) : null}
         {error ? <p className="error-text">{error}</p> : null}
 
-        <Button color="primary" isLoading={isSubmitting} radius="sm" type="submit">
+        <Button isPending={isSubmitting} type="submit">
           Guardar
         </Button>
       </form>
@@ -371,11 +371,10 @@ function OptionGroup({
             <Button
               aria-pressed={selectedId === item.id}
               className="choice-chip"
-              color={selectedId === item.id ? "primary" : "default"}
               key={item.id}
-              radius="full"
+             
               size="sm"
-              variant={selectedId === item.id ? "solid" : "flat"}
+              variant={selectedId === item.id ? "primary" : "tertiary"}
               onPress={() => onSelect(item.id)}
             >
               {item.label}

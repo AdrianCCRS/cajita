@@ -12,7 +12,7 @@ import { HistoryPlaceholder } from "../features/transactions/HistoryPlaceholder"
 import { ServicesPlaceholder } from "../features/services/ServicesPlaceholder";
 import { SettingsPlaceholder } from "../features/settings/SettingsPlaceholder";
 import { getDoc } from "firebase/firestore";
-import { Card, CardBody } from "../shared/components/ui";
+import { Card, CardContent } from "../shared/components/ui";
 
 export function App() {
   return (
@@ -106,12 +106,12 @@ function OnboardingGate({ children }: { children: ReactNode }) {
 function LoadingScreen({ message }: { message: string }) {
   return (
     <main className="auth-screen">
-      <Card className="auth-panel ui-card" shadow="none">
-        <CardBody>
+      <Card className="auth-panel ui-card">
+        <CardContent>
           <p className="eyebrow">Control financiero</p>
           <h1>Spa Control</h1>
           <p>{message}</p>
-        </CardBody>
+        </CardContent>
       </Card>
     </main>
   );

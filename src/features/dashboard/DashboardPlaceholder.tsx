@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { Button, Card, CardBody, HelpDrawer, MetricCard, Progress, ScreenHero } from "../../shared/components/ui";
+import { Button, Card, CardContent, HelpDrawer, MetricCard, ProgressBar, ScreenHero } from "../../shared/components/ui";
 import { useSpaData } from "../../shared/data/SpaDataContext";
 import type { TransactionType } from "../../shared/types/domain";
 import { isToday } from "../../shared/utils/dates";
@@ -93,10 +93,10 @@ export function DashboardPlaceholder() {
       </ScreenHero>
 
       <div className="quick-strip">
-        <Button color="success" radius="sm" onPress={() => openRegister("income")}>
+        <Button onPress={() => openRegister("income")}>
           Registrar venta
         </Button>
-        <Button color="warning" radius="sm" onPress={() => openRegister("expense")}>
+        <Button variant="secondary" onPress={() => openRegister("expense")}>
           Registrar gasto
         </Button>
       </div>
@@ -157,8 +157,8 @@ export function DashboardPlaceholder() {
         />
       </div>
 
-      <Card className="ui-card wide-card" shadow="none">
-        <CardBody>
+      <Card className="ui-card wide-card">
+        <CardContent>
           <div className="section-heading">
             <div>
               <span>Meta mínima para no perder plata</span>
@@ -168,20 +168,20 @@ export function DashboardPlaceholder() {
           </div>
           {breakEven ? (
             <>
-              <Progress aria-label="Avance de meta mínima" color={breakEvenProgress >= 100 ? "success" : "warning"} value={Math.min(breakEvenProgress, 100)} />
+              <ProgressBar aria-label="Avance de meta mínima" color={breakEvenProgress >= 100 ? "success" : "warning"} value={Math.min(breakEvenProgress, 100)} />
               <p>Meta sugerida por día: {formatCurrency(getDailySuggestedGoal(breakEven, 24))}.</p>
             </>
           ) : (
             <p>Configura tus gastos fijos para ver cuánto necesitas vender cada mes.</p>
           )}
-          <Button radius="sm" variant="light" onPress={() => setHelpKey("breakEven")}>
+          <Button variant="ghost" onPress={() => setHelpKey("breakEven")}>
             Entender esta meta
           </Button>
-        </CardBody>
+        </CardContent>
       </Card>
 
-      <Card className="ui-card wide-card" shadow="none">
-        <CardBody>
+      <Card className="ui-card wide-card">
+        <CardContent>
           <div className="section-heading">
             <div>
               <span>Avance de mi salario</span>
@@ -191,11 +191,11 @@ export function DashboardPlaceholder() {
             </div>
             <b>{Math.round(salaryProgress)}%</b>
           </div>
-          <Progress aria-label="Avance de salario" color="secondary" value={Math.min(salaryProgress, 100)} />
-          <Button radius="sm" variant="light" onPress={() => openRegister("withdrawal")}>
+          <ProgressBar aria-label="Avance de salario" color="accent" value={Math.min(salaryProgress, 100)} />
+          <Button variant="ghost" onPress={() => openRegister("withdrawal")}>
             Registrar pago
           </Button>
-        </CardBody>
+        </CardContent>
       </Card>
 
       <div className="placeholder-grid">
