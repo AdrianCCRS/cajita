@@ -65,6 +65,7 @@ type SpaData = SpaState & {
   error: string | null;
   addTransaction: (input: TransactionInput) => Promise<Transaction>;
   deleteTransaction: (id: string) => Promise<void>;
+  restoreTransaction: (transaction: Transaction) => Promise<void>;
   upsertService: (input: Pick<Service, "name" | "defaultPrice" | "estimatedCost"> & { id?: string }) => Promise<void>;
   deactivateService: (id: string) => Promise<void>;
   upsertFixedExpense: (input: Pick<FixedExpense, "name" | "amount"> & { id?: string }) => Promise<void>;
@@ -336,6 +337,18 @@ export function SpaDataProvider({ children }: { children: ReactNode }) {
           commitLocal((current) => ({
             ...current,
             transactions: current.transactions.filter((transaction) => transaction.id !== id),
+          }));
+        }
+      },
+      async restoreTransaction(transaction) {
+        if (useFirestore && db && user) {
+          await setDoc(transactionDoc(db, user.uid, transaction.id), withoutId(transaction));
+        } else {
+          commitLocal((current) => ({
+            ...current,
+            transactions: current.transactions.some((item) => item.id === transaction.id)
+              ? current.transactions
+              : [transaction, ...current.transactions],
           }));
         }
       },

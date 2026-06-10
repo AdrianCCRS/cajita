@@ -2,10 +2,12 @@ import { CircleDollarSign, Home, ListChecks, Scissors, Settings, X } from "lucid
 import { useMemo, useState, type FormEvent } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../shared/auth/AuthContext";
-import { useSpaData, defaultTransactionDate } from "../shared/data/SpaDataContext";
-import type { ExpenseType, PaymentMethod, TransactionType } from "../shared/types/domain";
+import { defaultTransactionDate, useSpaData } from "../shared/data/SpaDataContext";
+import type { ExpenseType, PaymentMethod, Transaction, TransactionType } from "../shared/types/domain";
 import { formatCurrency } from "../shared/utils/formatCurrency";
 import { getEstimatedProfit, getMonthlyExpenses, getMonthlyIncome, getMonthlyWithdrawals } from "../shared/utils/financials";
+import { transactionSchema } from "../shared/validation/schemas";
+import { BottomSheet, Button, Card, CardBody, Chip, MoneyField, SkeletonCard, Textarea, ToastRegion } from "../shared/components/ui";
 
 const navItems = [
   { to: "/", label: "Inicio", icon: Home },
@@ -14,44 +16,81 @@ const navItems = [
   { to: "/configuracion", label: "Config", icon: Settings },
 ];
 
+type Toast = {
+  kind?: "success" | "warning" | "error";
+  message: string;
+  actionLabel?: string;
+  onAction?: () => void;
+};
+
 export function AppShell() {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [initialType, setInitialType] = useState<TransactionType>("income");
+  const [toast, setToast] = useState<Toast | null>(null);
   const { isFirebaseEnabled, signOut } = useAuth();
-  const { source, isLoading, error } = useSpaData();
+  const { business, source, isLoading, error } = useSpaData();
+
+  function openRegister(type: TransactionType) {
+    setInitialType(type);
+    setIsRegisterOpen(true);
+  }
+
+  function showToast(nextToast: Toast) {
+    setToast(nextToast);
+    window.setTimeout(() => setToast(null), nextToast.actionLabel ? 5000 : 3000);
+  }
 
   return (
     <div className="app-shell">
       <header className="app-header">
         <div>
-          <p className="eyebrow">Control financiero</p>
+          <p className="eyebrow">{business.name}</p>
           <h1>Spa Control</h1>
         </div>
         <div className="header-actions">
-          <span className="status-pill">{source === "firebase" ? "Firebase" : "Demo local"}</span>
+          <Chip color={source === "firebase" ? "success" : "warning"} size="sm" variant="flat">
+            {source === "firebase" ? "Firebase" : "Demo local"}
+          </Chip>
           {isFirebaseEnabled ? (
-            <button className="secondary-button compact" type="button" onClick={() => void signOut()}>
+            <Button radius="sm" size="sm" variant="bordered" onPress={() => void signOut()}>
               Salir
-            </button>
+            </Button>
           ) : null}
         </div>
       </header>
 
       <main className="app-main">
-        {isLoading ? <p className="hint-text">Cargando datos...</p> : null}
-        {error ? <p className="error-text">{error}</p> : null}
-        <Outlet />
+        {isLoading ? (
+          <div className="placeholder-grid" aria-label="Cargando datos">
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+        ) : null}
+        {error ? (
+          <Card className="ui-card error-panel" shadow="none">
+            <CardBody>
+              <strong>Algo salió mal.</strong>
+              <p>{error}</p>
+              <Button radius="sm" variant="bordered" onPress={() => window.location.reload()}>
+                Reintentar
+              </Button>
+            </CardBody>
+          </Card>
+        ) : null}
+        <Outlet context={{ openRegister, showToast }} />
       </main>
 
-      <button
-        className="quick-action"
-        type="button"
-        aria-label="Registrar movimiento"
-        onClick={() => setIsRegisterOpen(true)}
-      >
-        <CircleDollarSign aria-hidden="true" size={26} />
-      </button>
+      <QuickActionFab onSelect={openRegister} />
 
-      {isRegisterOpen ? <RegisterMovementDialog onClose={() => setIsRegisterOpen(false)} /> : null}
+      {isRegisterOpen ? (
+        <RegisterMovementSheet
+          initialType={initialType}
+          onClose={() => setIsRegisterOpen(false)}
+          onSaved={(message) => showToast({ kind: "success", message })}
+        />
+      ) : null}
+
+      <ToastRegion toast={toast} onDismiss={() => setToast(null)} />
 
       <nav className="bottom-nav" aria-label="Navegación principal">
         {navItems.map((item) => (
@@ -70,21 +109,65 @@ export function AppShell() {
   );
 }
 
-function RegisterMovementDialog({ onClose }: { onClose: () => void }) {
+function QuickActionFab({ onSelect }: { onSelect: (type: TransactionType) => void }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  function choose(type: TransactionType) {
+    setIsExpanded(false);
+    onSelect(type);
+  }
+
+  return (
+    <div className="fab-cluster">
+      {isExpanded ? (
+        <div className="fab-menu" aria-label="Acciones rápidas">
+          <Button color="success" radius="full" onPress={() => choose("income")}>
+            Venta
+          </Button>
+          <Button color="warning" radius="full" onPress={() => choose("expense")}>
+            Gasto
+          </Button>
+          <Button color="secondary" radius="full" onPress={() => choose("withdrawal")}>
+            Pagarme
+          </Button>
+        </div>
+      ) : null}
+      <Button
+        isIconOnly
+        aria-label={isExpanded ? "Cerrar acciones rápidas" : "Registrar movimiento"}
+        className="quick-action"
+        color="primary"
+        radius="full"
+        onPress={() => setIsExpanded((current) => !current)}
+      >
+        {isExpanded ? <X aria-hidden="true" size={26} /> : <CircleDollarSign aria-hidden="true" size={26} />}
+      </Button>
+    </div>
+  );
+}
+
+function RegisterMovementSheet({
+  initialType,
+  onClose,
+  onSaved,
+}: {
+  initialType: TransactionType;
+  onClose: () => void;
+  onSaved: (message: string) => void;
+}) {
   const { services, categories, transactions, financialSettings, addTransaction } = useSpaData();
   const activeServices = services.filter((service) => service.isActive);
   const activeCategories = categories.filter((category) => category.isActive);
-  const [type, setType] = useState<TransactionType>("income");
+  const [type, setType] = useState<TransactionType>(initialType);
   const [serviceId, setServiceId] = useState(activeServices[0]?.id ?? "");
   const [categoryId, setCategoryId] = useState(activeCategories[0]?.id ?? "");
   const selectedService = activeServices.find((service) => service.id === serviceId);
-  const [amount, setAmount] = useState(selectedService?.defaultPrice.toString() ?? "");
+  const [amount, setAmount] = useState(initialType === "income" ? selectedService?.defaultPrice.toString() ?? "" : "");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [expenseType, setExpenseType] = useState<ExpenseType>("variable");
   const [date, setDate] = useState(defaultTransactionDate());
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const today = new Date();
@@ -100,9 +183,10 @@ function RegisterMovementDialog({ onClose }: { onClose: () => void }) {
   function changeType(nextType: TransactionType) {
     setType(nextType);
     setError("");
-    setSuccess("");
     if (nextType === "income") {
-      setAmount(selectedService?.defaultPrice.toString() ?? "");
+      const nextService = activeServices.find((service) => service.id === serviceId) ?? activeServices[0];
+      setServiceId(nextService?.id ?? "");
+      setAmount(nextService?.defaultPrice.toString() ?? "");
     } else {
       setAmount("");
     }
@@ -117,9 +201,20 @@ function RegisterMovementDialog({ onClose }: { onClose: () => void }) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const numericAmount = Number(amount);
+    const parsed = transactionSchema.safeParse({ amount: numericAmount, date, paymentMethod, notes });
 
-    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-      setError("El valor debe ser mayor a $0");
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Revisa los datos.");
+      return;
+    }
+
+    if (type === "income" && !serviceId) {
+      setError("Aún no has configurado tus servicios. Es el primer paso.");
+      return;
+    }
+
+    if (type === "expense" && !categoryId) {
+      setError("Elige una categoría para el gasto.");
       return;
     }
 
@@ -132,21 +227,8 @@ function RegisterMovementDialog({ onClose }: { onClose: () => void }) {
             ? await addTransaction({ type, categoryId, amount: numericAmount, expenseType, paymentMethod, date, notes })
             : await addTransaction({ type, amount: numericAmount, paymentMethod, date, notes });
 
-      const message =
-        transaction.type === "income"
-          ? `¡Listo! ${transaction.serviceName} por ${formatCurrency(transaction.amount)} quedó registrada.`
-          : transaction.type === "expense"
-            ? `Gasto de ${formatCurrency(transaction.amount)} en ${transaction.categoryName} registrado.`
-            : `¡Te pagaste ${formatCurrency(transaction.amount)}! Ya llevas ${formatCurrency(
-                monthly.withdrawals + transaction.amount,
-              )} de tu meta mensual.`;
-      setSuccess(message);
-      setError("");
-      setNotes("");
-      if (type !== "income") {
-        setAmount("");
-      }
-      window.setTimeout(onClose, 900);
+      onSaved(buildSuccessMessage(transaction, monthly.withdrawals));
+      onClose();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Algo salió mal. Intenta de nuevo en un momento.");
     } finally {
@@ -155,120 +237,169 @@ function RegisterMovementDialog({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="dialog-backdrop" role="presentation">
-      <section className="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="register-title">
-        <header className="sheet-header">
-          <div>
-            <p className="eyebrow">Registro rápido</p>
-            <h2 id="register-title">Nuevo movimiento</h2>
-          </div>
-          <button className="icon-button" type="button" aria-label="Cerrar" onClick={onClose}>
-            <X aria-hidden="true" size={22} />
-          </button>
-        </header>
+    <BottomSheet isOpen title="Nuevo movimiento" eyebrow="Registro rápido" onClose={onClose}>
+      <form className="form-stack register-form" onSubmit={handleSubmit}>
+        <div className="segmented" aria-label="Tipo de movimiento">
+          <Button color={type === "income" ? "success" : "default"} radius="sm" variant={type === "income" ? "solid" : "flat"} onPress={() => changeType("income")}>
+            Venta
+          </Button>
+          <Button color={type === "expense" ? "warning" : "default"} radius="sm" variant={type === "expense" ? "solid" : "flat"} onPress={() => changeType("expense")}>
+            Gasto
+          </Button>
+          <Button
+            color={type === "withdrawal" ? "secondary" : "default"}
+            radius="sm"
+            variant={type === "withdrawal" ? "solid" : "flat"}
+            onPress={() => changeType("withdrawal")}
+          >
+            Pagarme
+          </Button>
+        </div>
 
-        <form className="form-stack" onSubmit={handleSubmit}>
-          <div className="segmented" aria-label="Tipo de movimiento">
-            <button type="button" className={type === "income" ? "active" : ""} onClick={() => changeType("income")}>
-              Venta
-            </button>
-            <button type="button" className={type === "expense" ? "active" : ""} onClick={() => changeType("expense")}>
-              Gasto
-            </button>
-            <button
-              type="button"
-              className={type === "withdrawal" ? "active" : ""}
-              onClick={() => changeType("withdrawal")}
-            >
-              Pagarme
-            </button>
-          </div>
+        {type === "income" ? (
+          <OptionGroup
+            emptyText="Aún no has configurado tus servicios. Es el primer paso."
+            items={activeServices.map((service) => ({
+              id: service.id,
+              label: service.name,
+              detail: formatCurrency(service.defaultPrice),
+            }))}
+            label="Servicio"
+            selectedId={serviceId}
+            onSelect={changeService}
+          />
+        ) : null}
 
-          {type === "income" ? (
-            <label>
-              Servicio
-              <select value={serviceId} onChange={(event) => changeService(event.target.value)} required>
-                {activeServices.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
-
-          {type === "expense" ? (
-            <>
-              <label>
-                Categoría
-                <select value={categoryId} onChange={(event) => setCategoryId(event.target.value)} required>
-                  {activeCategories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Tipo de gasto
-                <select value={expenseType} onChange={(event) => setExpenseType(event.target.value as ExpenseType)}>
-                  <option value="fixed">Fijo</option>
-                  <option value="variable">Variable</option>
-                  <option value="extraordinary">Extraordinario</option>
-                </select>
-              </label>
-            </>
-          ) : null}
-
-          <label>
-            Valor
-            <input
-              inputMode="numeric"
-              min="1"
-              type="number"
-              value={amount}
-              onChange={(event) => setAmount(event.target.value)}
-              placeholder="0"
-              required
+        {type === "expense" ? (
+          <>
+            <OptionGroup
+              emptyText="No hay categorías disponibles."
+              items={activeCategories.map((category) => ({
+                id: category.id,
+                label: category.name,
+              }))}
+              label="Categoría"
+              selectedId={categoryId}
+              onSelect={setCategoryId}
             />
-          </label>
+            <OptionGroup
+              items={[
+                { id: "fixed", label: "Fijo" },
+                { id: "variable", label: "Variable" },
+                { id: "extraordinary", label: "Extraordinario" },
+              ]}
+              label="Tipo de gasto"
+              selectedId={expenseType}
+              onSelect={(value) => setExpenseType(value as ExpenseType)}
+            />
+          </>
+        ) : null}
 
-          <label>
-            Método de pago
-            <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}>
-              <option value="cash">Efectivo</option>
-              <option value="transfer">Transferencia</option>
-              <option value="other">Otro</option>
-            </select>
-          </label>
+        <MoneyField isRequired label="Valor" min={1} value={amount} onValueChange={setAmount} />
 
-          <label>
-            Fecha
-            <input type="date" value={date} onChange={(event) => setDate(event.target.value)} required />
-          </label>
+        <OptionGroup
+          items={[
+            { id: "cash", label: "Efectivo" },
+            { id: "transfer", label: "Transferencia" },
+            { id: "other", label: "Otro" },
+          ]}
+          label="Método de pago"
+          selectedId={paymentMethod}
+          onSelect={(value) => setPaymentMethod(value as PaymentMethod)}
+        />
 
-          <label>
-            Nota opcional
-            <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} />
-          </label>
+        <input
+          aria-label="Fecha"
+          autoComplete="off"
+          className="native-date"
+          name="transaction-date"
+          type="date"
+          value={date}
+          onChange={(event) => setDate(event.target.value)}
+          required
+        />
 
-          {type === "withdrawal" && Number(amount) > monthly.available ? (
-            <p className="warning-text">Este pago supera el dinero disponible del negocio. Puedes guardarlo si así lo decides.</p>
-          ) : null}
-          {type === "withdrawal" ? (
-            <p className="hint-text">
-              Meta mensual: {formatCurrency(financialSettings.salaryTarget)}. Pagado este mes:{" "}
-              {formatCurrency(monthly.withdrawals)}.
-            </p>
-          ) : null}
-          {error ? <p className="error-text">{error}</p> : null}
-          {success ? <p className="success-text">{success}</p> : null}
+        <Textarea
+          className="form-control"
+          label="Nota opcional"
+          minRows={2}
+          name="transaction-notes"
+          radius="sm"
+          value={notes}
+          variant="bordered"
+          autoComplete="off"
+          onValueChange={setNotes}
+        />
 
-          <button className="primary-button" type="submit" disabled={isSubmitting}>
-            Guardar
-          </button>
-        </form>
-      </section>
+        {type === "withdrawal" && Number(amount) > monthly.available ? (
+          <p className="warning-text">Este pago supera el dinero disponible del negocio. Puedes guardarlo si así lo decides.</p>
+        ) : null}
+        {type === "withdrawal" ? (
+          <p className="hint-text">
+            Meta mensual: {formatCurrency(financialSettings.salaryTarget)}. Pagado este mes: {formatCurrency(monthly.withdrawals)}.
+          </p>
+        ) : null}
+        {error ? <p className="error-text">{error}</p> : null}
+
+        <Button color="primary" isLoading={isSubmitting} radius="sm" type="submit">
+          Guardar
+        </Button>
+      </form>
+    </BottomSheet>
+  );
+}
+
+function OptionGroup({
+  label,
+  items,
+  selectedId,
+  emptyText,
+  onSelect,
+}: {
+  label: string;
+  items: Array<{ id: string; label: string; detail?: string }>;
+  selectedId: string;
+  emptyText?: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div className="option-group">
+      <span>{label}</span>
+      {items.length ? (
+        <div className="chip-list">
+          {items.map((item) => (
+            <Button
+              aria-pressed={selectedId === item.id}
+              className="choice-chip"
+              color={selectedId === item.id ? "primary" : "default"}
+              key={item.id}
+              radius="full"
+              size="sm"
+              variant={selectedId === item.id ? "solid" : "flat"}
+              onPress={() => onSelect(item.id)}
+            >
+              {item.label}
+              {item.detail ? <small>{item.detail}</small> : null}
+            </Button>
+          ))}
+        </div>
+      ) : (
+        <p className="hint-text">{emptyText}</p>
+      )}
     </div>
   );
+}
+
+function buildSuccessMessage(transaction: Transaction, previousWithdrawals: number) {
+  if (transaction.type === "income") {
+    return `¡Listo! ${transaction.serviceName} por ${formatCurrency(transaction.amount)} quedó registrada.`;
+  }
+
+  if (transaction.type === "expense") {
+    return `Gasto de ${formatCurrency(transaction.amount)} en ${transaction.categoryName} registrado.`;
+  }
+
+  return `¡Te pagaste ${formatCurrency(transaction.amount)}! Ya llevas ${formatCurrency(
+    previousWithdrawals + transaction.amount,
+  )} de tu meta mensual.`;
 }

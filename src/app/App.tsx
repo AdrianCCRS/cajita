@@ -1,4 +1,3 @@
-import { HeroUIProvider } from "@heroui/react";
 import { useEffect, useState, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./AppShell";
@@ -13,30 +12,29 @@ import { HistoryPlaceholder } from "../features/transactions/HistoryPlaceholder"
 import { ServicesPlaceholder } from "../features/services/ServicesPlaceholder";
 import { SettingsPlaceholder } from "../features/settings/SettingsPlaceholder";
 import { getDoc } from "firebase/firestore";
+import { Card, CardBody } from "../shared/components/ui";
 
 export function App() {
   return (
-    <HeroUIProvider>
-      <AuthProvider>
-        <AuthGate>
-          <OnboardingGate>
-            <SpaDataProvider>
-              <BrowserRouter>
-                <Routes>
-                  <Route element={<AppShell />}>
-                    <Route index element={<DashboardPlaceholder />} />
-                    <Route path="historial" element={<HistoryPlaceholder />} />
-                    <Route path="servicios" element={<ServicesPlaceholder />} />
-                    <Route path="configuracion" element={<SettingsPlaceholder />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Route>
-                </Routes>
-              </BrowserRouter>
-            </SpaDataProvider>
-          </OnboardingGate>
-        </AuthGate>
-      </AuthProvider>
-    </HeroUIProvider>
+    <AuthProvider>
+      <AuthGate>
+        <OnboardingGate>
+          <SpaDataProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route element={<AppShell />}>
+                  <Route index element={<DashboardPlaceholder />} />
+                  <Route path="historial" element={<HistoryPlaceholder />} />
+                  <Route path="servicios" element={<ServicesPlaceholder />} />
+                  <Route path="configuracion" element={<SettingsPlaceholder />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </SpaDataProvider>
+        </OnboardingGate>
+      </AuthGate>
+    </AuthProvider>
   );
 }
 
@@ -48,15 +46,7 @@ function AuthGate({ children }: { children: ReactNode }) {
   }
 
   if (isLoading) {
-    return (
-      <main className="auth-screen">
-        <section className="auth-panel">
-          <p className="eyebrow">Control financiero</p>
-          <h1>Spa Control</h1>
-          <p>Revisando tu sesión...</p>
-        </section>
-      </main>
-    );
+    return <LoadingScreen message="Revisando tu sesión…" />;
   }
 
   return user ? children : <LoginScreen />;
@@ -107,16 +97,22 @@ function OnboardingGate({ children }: { children: ReactNode }) {
   }
 
   if (isChecking) {
-    return (
-      <main className="auth-screen">
-        <section className="auth-panel">
-          <p className="eyebrow">Control financiero</p>
-          <h1>Spa Control</h1>
-          <p>Preparando tu negocio...</p>
-        </section>
-      </main>
-    );
+    return <LoadingScreen message="Preparando tu negocio…" />;
   }
 
   return isCompleted ? children : <OnboardingScreen onComplete={() => setIsCompleted(true)} />;
+}
+
+function LoadingScreen({ message }: { message: string }) {
+  return (
+    <main className="auth-screen">
+      <Card className="auth-panel ui-card" shadow="none">
+        <CardBody>
+          <p className="eyebrow">Control financiero</p>
+          <h1>Spa Control</h1>
+          <p>{message}</p>
+        </CardBody>
+      </Card>
+    </main>
+  );
 }

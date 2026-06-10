@@ -1,5 +1,8 @@
 import { useState, type FormEvent } from "react";
+import { z } from "zod";
 import { useAuth } from "../../shared/auth/AuthContext";
+import { Button, Card, CardBody, Input } from "../../shared/components/ui";
+import { authSchema } from "../../shared/validation/schemas";
 
 export function LoginScreen() {
   const { signIn, signUp, resetPassword, authError } = useAuth();
@@ -12,15 +15,21 @@ export function LoginScreen() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setIsSubmitting(true);
     setError("");
     setMessage("");
 
+    const parsed = authSchema.safeParse({ email, password });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Revisa los datos.");
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       if (mode === "login") {
-        await signIn(email, password);
+        await signIn(parsed.data.email, parsed.data.password);
       } else {
-        await signUp(email, password);
+        await signUp(parsed.data.email, parsed.data.password);
       }
     } catch (caughtError) {
       setError(readAuthError(caughtError));
@@ -30,17 +39,18 @@ export function LoginScreen() {
   }
 
   async function handleResetPassword() {
-    if (!email.trim()) {
-      setError("Escribe tu correo para enviarte la recuperación.");
+    setError("");
+    setMessage("");
+
+    const parsed = z.string().trim().email("Escribe tu correo para enviarte el enlace.").safeParse(email);
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Escribe tu correo para enviarte el enlace.");
       return;
     }
 
     setIsSubmitting(true);
-    setError("");
-    setMessage("");
-
     try {
-      await resetPassword(email);
+      await resetPassword(parsed.data);
       setMessage("Te enviamos un correo para recuperar tu contraseña.");
     } catch (caughtError) {
       setError(readAuthError(caughtError));
@@ -51,52 +61,58 @@ export function LoginScreen() {
 
   return (
     <main className="auth-screen">
-      <section className="auth-panel" aria-labelledby="login-title">
-        <p className="eyebrow">Control financiero</p>
-        <h1 id="login-title">Spa Control</h1>
-        <p>Entra con tu correo para guardar ventas, gastos y salario en Firebase.</p>
+      <Card className="auth-panel ui-card" shadow="none" aria-labelledby="login-title">
+        <CardBody>
+          <p className="eyebrow">Control financiero</p>
+          <h1 id="login-title">Spa Control</h1>
+          <p>{mode === "login" ? "Entra para ver cómo va tu negocio hoy." : "Crea tu cuenta privada para empezar."}</p>
 
-        <form className="form-stack" onSubmit={handleSubmit}>
-          <label>
-            Correo
-            <input
+          <form className="form-stack" onSubmit={handleSubmit}>
+            <Input
               autoComplete="email"
+              className="form-control"
               inputMode="email"
+              isRequired
+              label="Correo"
+              name="email"
+              radius="sm"
+              spellCheck="false"
               type="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
+              variant="bordered"
+              onValueChange={setEmail}
             />
-          </label>
-          <label>
-            Contraseña
-            <input
+            <Input
               autoComplete={mode === "login" ? "current-password" : "new-password"}
-              minLength={6}
+              className="form-control"
+              isRequired
+              label="Contraseña"
+              name="password"
+              radius="sm"
               type="password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
+              variant="bordered"
+              onValueChange={setPassword}
             />
-          </label>
 
-          {error || authError ? <p className="error-text">{error || authError}</p> : null}
-          {message ? <p className="success-text">{message}</p> : null}
+            {error || authError ? <p className="error-text">{error || authError}</p> : null}
+            {message ? <p className="success-text">{message}</p> : null}
 
-          <button className="primary-button" type="submit" disabled={isSubmitting}>
-            {mode === "login" ? "Ingresar" : "Crear cuenta"}
-          </button>
-        </form>
+            <Button color="primary" isLoading={isSubmitting} radius="sm" type="submit">
+              {mode === "login" ? "Entrar" : "Crear cuenta"}
+            </Button>
+          </form>
 
-        <div className="auth-actions">
-          <button type="button" onClick={() => setMode(mode === "login" ? "register" : "login")}>
-            {mode === "login" ? "Crear cuenta" : "Ya tengo cuenta"}
-          </button>
-          <button type="button" onClick={handleResetPassword} disabled={isSubmitting}>
-            Recuperar contraseña
-          </button>
-        </div>
-      </section>
+          <div className="auth-actions">
+            <Button radius="sm" variant="light" onPress={() => setMode(mode === "login" ? "register" : "login")}>
+              {mode === "login" ? "Crear cuenta" : "Ya tengo cuenta"}
+            </Button>
+            <Button isDisabled={isSubmitting} radius="sm" variant="light" onPress={handleResetPassword}>
+              Recuperar contraseña
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
     </main>
   );
 }

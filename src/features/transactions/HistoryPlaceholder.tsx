@@ -1,13 +1,28 @@
 import { Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
+import { BottomSheet, Button, Card, CardBody, ConfirmDialog, EmptyState, ScreenHero } from "../../shared/components/ui";
 import { useSpaData } from "../../shared/data/SpaDataContext";
-import type { TransactionType } from "../../shared/types/domain";
+import type { Transaction, TransactionType } from "../../shared/types/domain";
 import { formatDateShort } from "../../shared/utils/dates";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
 
+const filters: Array<{ id: TransactionType | "all"; label: string }> = [
+  { id: "all", label: "Todos" },
+  { id: "income", label: "Ventas" },
+  { id: "expense", label: "Gastos" },
+  { id: "withdrawal", label: "Pagarme" },
+];
+
 export function HistoryPlaceholder() {
-  const { transactions, deleteTransaction } = useSpaData();
+  const { openRegister, showToast } = useOutletContext<{
+    openRegister: (type: TransactionType) => void;
+    showToast: (toast: { kind?: "success" | "warning" | "error"; message: string; actionLabel?: string; onAction?: () => void }) => void;
+  }>();
+  const { transactions, deleteTransaction, restoreTransaction } = useSpaData();
   const [filter, setFilter] = useState<TransactionType | "all">("all");
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Transaction | null>(null);
   const visibleTransactions = useMemo(
     () =>
       transactions
@@ -16,66 +31,137 @@ export function HistoryPlaceholder() {
     [filter, transactions],
   );
 
+  async function confirmDelete() {
+    if (!pendingDelete) {
+      return;
+    }
+
+    const deleted = pendingDelete;
+    setPendingDelete(null);
+    setSelectedTransaction(null);
+    await deleteTransaction(deleted.id);
+    showToast({
+      kind: "success",
+      message: "Movimiento eliminado. ¿Fue un error? Puedes volver a registrarlo.",
+      actionLabel: "Deshacer",
+      onAction: () => void restoreTransaction(deleted),
+    });
+  }
+
   return (
     <section className="screen-stack" aria-labelledby="history-title">
-      <div className="hero-panel">
-        <h2 id="history-title">Historial</h2>
-        <p>Movimientos ordenados del más reciente al más antiguo.</p>
-      </div>
+      <ScreenHero title="Historial">Movimientos ordenados del más reciente al más antiguo.</ScreenHero>
 
-      <div className="segmented inline">
-        <button type="button" className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>
-          Todos
-        </button>
-        <button type="button" className={filter === "income" ? "active" : ""} onClick={() => setFilter("income")}>
-          Ventas
-        </button>
-        <button type="button" className={filter === "expense" ? "active" : ""} onClick={() => setFilter("expense")}>
-          Gastos
-        </button>
-        <button
-          type="button"
-          className={filter === "withdrawal" ? "active" : ""}
-          onClick={() => setFilter("withdrawal")}
-        >
-          Salario
-        </button>
+      <div className="segmented inline" aria-label="Filtrar movimientos">
+        {filters.map((item) => (
+          <Button
+            color={filter === item.id ? "primary" : "default"}
+            key={item.id}
+            radius="full"
+            size="sm"
+            variant={filter === item.id ? "solid" : "flat"}
+            onPress={() => setFilter(item.id)}
+          >
+            {item.label}
+          </Button>
+        ))}
       </div>
 
       {visibleTransactions.length ? (
         <div className="list-stack">
           {visibleTransactions.map((transaction) => (
-            <article className="list-row" key={transaction.id}>
-              <div>
-                <span>{transaction.type === "income" ? "Venta" : transaction.type === "expense" ? "Gasto" : "Pagarme"}</span>
-                <strong>{transaction.serviceName ?? transaction.categoryName ?? transaction.notes ?? "Movimiento"}</strong>
-                <p>{formatDateShort(transaction.date)}</p>
-              </div>
-              <div className="row-actions">
-                <b>{formatCurrency(transaction.amount)}</b>
-                <button
-                  className="icon-button danger"
-                  type="button"
-                  aria-label="Eliminar movimiento"
-                  onClick={() => {
-                    if (window.confirm(`¿Segura que quieres eliminar este movimiento de ${formatCurrency(transaction.amount)}?`)) {
-                      void deleteTransaction(transaction.id);
-                    }
-                  }}
-                >
-                  <Trash2 aria-hidden="true" size={18} />
-                </button>
-              </div>
-            </article>
+            <Card className="ui-card list-row movement-row" key={transaction.id} shadow="none" isPressable onPress={() => setSelectedTransaction(transaction)}>
+              <CardBody>
+                <div>
+                  <span>{getTransactionLabel(transaction.type)}</span>
+                  <strong>{transaction.serviceName ?? transaction.categoryName ?? transaction.notes ?? "Movimiento"}</strong>
+                  <p>{formatDateShort(transaction.date)}</p>
+                </div>
+                <div className="row-actions">
+                  <b>{formatCurrency(transaction.amount)}</b>
+                  <Button
+                    isIconOnly
+                    aria-label="Eliminar movimiento"
+                    color="danger"
+                    radius="full"
+                    size="sm"
+                    variant="light"
+                    onPress={() => setPendingDelete(transaction)}
+                  >
+                    <Trash2 aria-hidden="true" size={18} />
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
           ))}
         </div>
       ) : (
-        <article className="task-card">
-          <span>Sin movimientos</span>
-          <strong>¡Bienvenida a un nuevo mes!</strong>
-          <p>Empieza registrando tu primera venta.</p>
-        </article>
+        <EmptyState
+          actionLabel="Registrar venta"
+          message="Empieza registrando tu primera venta."
+          title="¡Bienvenida a un nuevo mes!"
+          onAction={() => openRegister("income")}
+        />
       )}
+
+      {selectedTransaction ? (
+        <BottomSheet isOpen title="Detalle del movimiento" eyebrow={getTransactionLabel(selectedTransaction.type)} onClose={() => setSelectedTransaction(null)}>
+          <div className="detail-list">
+            <DetailItem label="Valor" value={formatCurrency(selectedTransaction.amount)} />
+            <DetailItem label="Fecha" value={formatDateShort(selectedTransaction.date)} />
+            <DetailItem label="Método" value={getPaymentLabel(selectedTransaction.paymentMethod)} />
+            {selectedTransaction.serviceName ? <DetailItem label="Servicio" value={selectedTransaction.serviceName} /> : null}
+            {selectedTransaction.categoryName ? <DetailItem label="Categoría" value={selectedTransaction.categoryName} /> : null}
+            {selectedTransaction.notes ? <DetailItem label="Nota" value={selectedTransaction.notes} /> : null}
+            <Button color="danger" radius="sm" variant="bordered" onPress={() => setPendingDelete(selectedTransaction)}>
+              Eliminar movimiento
+            </Button>
+          </div>
+        </BottomSheet>
+      ) : null}
+
+      <ConfirmDialog
+        isOpen={Boolean(pendingDelete)}
+        message={
+          pendingDelete
+            ? `¿Segura que quieres eliminar este movimiento de ${formatCurrency(pendingDelete.amount)}?`
+            : "¿Segura que quieres eliminar este movimiento?"
+        }
+        title="Eliminar movimiento"
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => void confirmDelete()}
+      />
     </section>
   );
+}
+
+function DetailItem({ label, value }: { label: string; value: string }) {
+  return (
+    <Card className="ui-card" shadow="none">
+      <CardBody>
+        <span>{label}</span>
+        <strong>{value}</strong>
+      </CardBody>
+    </Card>
+  );
+}
+
+function getTransactionLabel(type: TransactionType) {
+  if (type === "income") {
+    return "Venta";
+  }
+  if (type === "expense") {
+    return "Gasto";
+  }
+  return "Pagarme";
+}
+
+function getPaymentLabel(paymentMethod: string) {
+  if (paymentMethod === "cash") {
+    return "Efectivo";
+  }
+  if (paymentMethod === "transfer") {
+    return "Transferencia";
+  }
+  return "Otro";
 }

@@ -1,11 +1,23 @@
 {
   "version": 1,
   "skills": {
+    "heroui-react": {
+      "source": "heroui-inc/heroui",
+      "sourceType": "github",
+      "skillPath": "skills/heroui-react/SKILL.md",
+      "computedHash": "c9e1bb41fbc3cee782faae08bd465ae05cd685a6ed7cc3392464fdf29b3ab467"
+    },
     "project-planner": {
       "source": "shubhamsaboo/awesome-llm-apps",
       "sourceType": "github",
       "skillPath": "awesome_agent_skills/project-planner/SKILL.md",
       "computedHash": "62897927d02705437bb82e3f6d622c29e3b43593d84967da60a014b623353f1f"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "computedHash": "a6a44d5498f7e8f68289902f3dedfc6f38ae0cee1e96527c80724cf27f727c2a"
     }
   }
 }
