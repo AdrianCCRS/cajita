@@ -1,0 +1,120 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedInAs(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isPositiveNumber(value) {
+      return value is number && value > 0;
+    }
+
+    function isZeroOrPositiveNumber(value) {
+      return value is number && value >= 0;
+    }
+
+    function isNonEmptyString(value) {
+      return value is string && value.size() > 0;
+    }
+
+    function validPaymentMethod(value) {
+      return value in ['cash', 'transfer', 'other'];
+    }
+
+    function validTransactionType(value) {
+      return value in ['income', 'expense', 'withdrawal'];
+    }
+
+    function validExpenseType(value) {
+      return value in ['fixed', 'variable', 'extraordinary'];
+    }
+
+    function validUserProfile(data) {
+      return data.currentBusinessId == 'main'
+        && data.onboardingCompleted is bool;
+    }
+
+    function validBusiness(data) {
+      return isNonEmptyString(data.name)
+        && data.currency == 'COP';
+    }
+
+    function validTransaction(data) {
+      return validTransactionType(data.type)
+        && isPositiveNumber(data.amount)
+        && data.date is string
+        && validPaymentMethod(data.paymentMethod)
+        && (!('expenseType' in data) || data.expenseType == null || validExpenseType(data.expenseType));
+    }
+
+    function validService(data) {
+      return isNonEmptyString(data.name)
+        && isPositiveNumber(data.defaultPrice)
+        && isZeroOrPositiveNumber(data.estimatedCost)
+        && data.isActive is bool;
+    }
+
+    function validFixedExpense(data) {
+      return isNonEmptyString(data.name)
+        && isZeroOrPositiveNumber(data.amount)
+        && data.isActive is bool;
+    }
+
+    function validCategory(data) {
+      return isNonEmptyString(data.name)
+        && data.isActive is bool;
+    }
+
+    function validFinancialSettings(data) {
+      return isZeroOrPositiveNumber(data.salaryTarget);
+    }
+
+    match /users/{userId} {
+      allow read: if signedInAs(userId);
+      allow create, update: if signedInAs(userId) && validUserProfile(request.resource.data);
+      allow delete: if signedInAs(userId);
+
+      match /businesses/{businessId} {
+        allow read: if signedInAs(userId);
+        allow create, update: if signedInAs(userId) && businessId == 'main' && validBusiness(request.resource.data);
+        allow delete: if signedInAs(userId);
+
+        match /services/{serviceId} {
+          allow read: if signedInAs(userId);
+          allow create, update: if signedInAs(userId) && validService(request.resource.data);
+          allow delete: if signedInAs(userId);
+        }
+
+        match /transactions/{transactionId} {
+          allow read: if signedInAs(userId);
+          allow create, update: if signedInAs(userId) && validTransaction(request.resource.data);
+          allow delete: if signedInAs(userId);
+        }
+
+        match /fixedExpenses/{fixedExpenseId} {
+          allow read: if signedInAs(userId);
+          allow create, update: if signedInAs(userId) && validFixedExpense(request.resource.data);
+          allow delete: if signedInAs(userId);
+        }
+
+        match /categories/{categoryId} {
+          allow read: if signedInAs(userId);
+          allow create, update: if signedInAs(userId) && validCategory(request.resource.data);
+          allow delete: if signedInAs(userId);
+        }
+
+        match /financialSettings/main {
+          allow read: if signedInAs(userId);
+          allow create, update: if signedInAs(userId) && validFinancialSettings(request.resource.data);
+          allow delete: if signedInAs(userId);
+        }
+      }
+    }
+
+    match /educationalConcepts/{conceptId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}

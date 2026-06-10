@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "project-planner": {
+      "source": "shubhamsaboo/awesome-llm-apps",
+      "sourceType": "github",
+      "skillPath": "awesome_agent_skills/project-planner/SKILL.md",
+      "computedHash": "62897927d02705437bb82e3f6d622c29e3b43593d84967da60a014b623353f1f"
+    }
+  }
+}
