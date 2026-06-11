@@ -56,7 +56,7 @@ export function HistoryPlaceholder() {
         {filters.map((item) => (
           <Button
             key={item.id}
-           
+            className={filter === item.id && item.id === "expense" ? "segmented--expense" : ""}
             size="sm"
             variant={filter === item.id ? "primary" : "tertiary"}
             onPress={() => setFilter(item.id)}
@@ -69,7 +69,7 @@ export function HistoryPlaceholder() {
       {visibleTransactions.length ? (
         <div className="list-stack">
           {visibleTransactions.map((transaction) => (
-            <Card className="ui-card list-row movement-row" key={transaction.id} onClick={() => setSelectedTransaction(transaction)} role="button" tabIndex={0}>
+            <Card className={`ui-card list-row movement-row${transaction.type === "expense" ? " row--expense" : ""}`} key={transaction.id} onClick={() => setSelectedTransaction(transaction)} role="button" tabIndex={0}>
               <Card.Content>
                 <div>
                   <span>{getTransactionLabel(transaction.type)}</span>

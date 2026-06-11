@@ -9,8 +9,8 @@ export function ServicesPlaceholder() {
   const { services, upsertService, deactivateService } = useSpaData();
   const [editingId, setEditingId] = useState<string | undefined>();
   const [name, setName] = useState("");
-  const [defaultPrice, setDefaultPrice] = useState("");
-  const [estimatedCost, setEstimatedCost] = useState("");
+  const [defaultPrice, setDefaultPrice] = useState<number | undefined>();
+  const [estimatedCost, setEstimatedCost] = useState<number | undefined>();
   const [error, setError] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -39,16 +39,16 @@ export function ServicesPlaceholder() {
 
     setEditingId(service.id);
     setName(service.name);
-    setDefaultPrice(String(service.defaultPrice));
-    setEstimatedCost(String(service.estimatedCost));
+    setDefaultPrice(service.defaultPrice);
+    setEstimatedCost(service.estimatedCost);
     setError("");
   }
 
   function resetForm() {
     setEditingId(undefined);
     setName("");
-    setDefaultPrice("");
-    setEstimatedCost("");
+    setDefaultPrice(undefined);
+    setEstimatedCost(undefined);
     setError("");
   }
 
@@ -73,8 +73,8 @@ export function ServicesPlaceholder() {
                 onChange={(e) => setName(e.target.value)}
               />
             </TextField>
-            <MoneyField isRequired label="Precio" min={1} value={defaultPrice} onValueChange={setDefaultPrice} />
-            <MoneyField isRequired label="Costo aproximado" value={estimatedCost} onValueChange={setEstimatedCost} />
+            <MoneyField isRequired label="Precio" minValue={1} value={defaultPrice} onChange={setDefaultPrice} />
+            <MoneyField isRequired label="Costo aproximado" value={estimatedCost} onChange={setEstimatedCost} />
             {error ? <p className="error-text">{error}</p> : null}
             <div className="button-row">
               <Button type="submit">

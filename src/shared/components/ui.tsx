@@ -13,7 +13,7 @@ import {
   TextField,
 } from "@heroui/react";
 import { AlertTriangle, CheckCircle2, HelpCircle, Info, Plus, X } from "lucide-react";
-import type { ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 
 type Tone = "neutral" | "income" | "expense" | "business" | "salary" | "profit" | "warning";
 
@@ -83,12 +83,19 @@ export function SkeletonCard() {
   );
 }
 
+const copFormatter = new Intl.NumberFormat("es-CO", {
+  style: "currency",
+  currency: "COP",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
 type MoneyFieldProps = {
   label: string;
-  value: string | number;
-  onValueChange: (value: string) => void;
+  value: number | undefined;
+  onChange: (value: number | undefined) => void;
   name?: string;
-  min?: number;
+  minValue?: number;
   placeholder?: string;
   isInvalid?: boolean;
   errorMessage?: string;
@@ -98,14 +105,23 @@ type MoneyFieldProps = {
 export function MoneyField({
   label,
   value,
-  onValueChange,
+  onChange,
   name,
-  min = 0,
+  minValue = 0,
   placeholder = "Ej. 35000",
   isInvalid,
   errorMessage,
   isRequired,
 }: MoneyFieldProps) {
+  const [isFocused, setIsFocused] = useState(false);
+
+  const displayValue =
+    isFocused
+      ? value !== undefined && value !== null ? String(value) : ""
+      : value !== undefined && value !== null
+        ? copFormatter.format(value)
+        : "";
+
   return (
     <TextField
       className="form-control"
@@ -117,12 +133,18 @@ export function MoneyField({
       <Input
         autoComplete="off"
         inputMode="numeric"
-        min={min}
+        min={minValue}
         placeholder={placeholder}
-        type="number"
-        value={String(value)}
+        type="text"
+        value={displayValue}
         variant="secondary"
-        onChange={(e) => onValueChange(e.target.value)}
+        onBlur={() => setIsFocused(false)}
+        onFocus={() => setIsFocused(true)}
+        onChange={(e) => {
+          const raw = e.target.value.replace(/[^0-9]/g, "");
+          const numeric = raw ? Number(raw) : undefined;
+          onChange(numeric);
+        }}
       />
       {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
     </TextField>

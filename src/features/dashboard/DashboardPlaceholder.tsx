@@ -96,7 +96,7 @@ export function DashboardPlaceholder() {
         <Button onPress={() => openRegister("income")}>
           Registrar venta
         </Button>
-        <Button variant="secondary" onPress={() => openRegister("expense")}>
+        <Button variant="secondary" className="btn-expense" onPress={() => openRegister("expense")}>
           Registrar gasto
         </Button>
       </div>
@@ -168,7 +168,7 @@ export function DashboardPlaceholder() {
           </div>
           {breakEven ? (
             <>
-              <ProgressBar aria-label="Avance de meta mínima" color={breakEvenProgress >= 100 ? "success" : "warning"} value={Math.min(breakEvenProgress, 100)} />
+              <ProgressBar aria-label="Avance de meta mínima" className={breakEvenProgress >= 100 ? "" : "progress--expense"} color={breakEvenProgress >= 100 ? "success" : "warning"} value={Math.min(breakEvenProgress, 100)} />
               <p>Meta sugerida por día: {formatCurrency(getDailySuggestedGoal(breakEven, 24))}.</p>
             </>
           ) : (

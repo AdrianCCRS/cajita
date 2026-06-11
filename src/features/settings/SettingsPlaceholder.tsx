@@ -9,8 +9,8 @@ export function SettingsPlaceholder() {
   const { business, fixedExpenses, financialSettings, upsertFixedExpense, updateSalaryTarget } = useSpaData();
   const [editingExpenseId, setEditingExpenseId] = useState<string | undefined>();
   const [expenseName, setExpenseName] = useState("");
-  const [expenseAmount, setExpenseAmount] = useState("");
-  const [salaryTarget, setSalaryTarget] = useState(financialSettings.salaryTarget.toString());
+  const [expenseAmount, setExpenseAmount] = useState<number | undefined>();
+  const [salaryTarget, setSalaryTarget] = useState<number | undefined>(financialSettings.salaryTarget);
   const [error, setError] = useState("");
   const [salaryMessage, setSalaryMessage] = useState("");
 
@@ -26,7 +26,7 @@ export function SettingsPlaceholder() {
     await upsertFixedExpense({ id: editingExpenseId, name: parsed.data.name, amount: parsed.data.amount });
     setEditingExpenseId(undefined);
     setExpenseName("");
-    setExpenseAmount("");
+    setExpenseAmount(undefined);
     setError("");
   }
 
@@ -50,7 +50,7 @@ export function SettingsPlaceholder() {
 
     setEditingExpenseId(expense.id);
     setExpenseName(expense.name);
-    setExpenseAmount(String(expense.amount));
+    setExpenseAmount(expense.amount);
     setError("");
   }
 
@@ -80,7 +80,7 @@ export function SettingsPlaceholder() {
                 onChange={(e) => setExpenseName(e.target.value)}
               />
             </TextField>
-            <MoneyField isRequired label="Valor" min={0} value={expenseAmount} onValueChange={setExpenseAmount} />
+            <MoneyField isRequired label="Valor" minValue={0} value={expenseAmount} onChange={setExpenseAmount} />
             {error ? <p className="error-text">{error}</p> : null}
             <div className="button-row">
               <Button type="submit">
@@ -93,7 +93,7 @@ export function SettingsPlaceholder() {
                   onPress={() => {
                     setEditingExpenseId(undefined);
                     setExpenseName("");
-                    setExpenseAmount("");
+                    setExpenseAmount(undefined);
                     setError("");
                   }}
                 >
@@ -128,7 +128,7 @@ export function SettingsPlaceholder() {
         <Card.Content>
           <form className="form-stack" onSubmit={handleSalary}>
             <h3>Mi salario</h3>
-            <MoneyField isRequired label="¿Cuánto quieres ganarte al mes?" value={salaryTarget} onValueChange={setSalaryTarget} />
+            <MoneyField isRequired label="¿Cuánto quieres ganarte al mes?" value={salaryTarget} onChange={setSalaryTarget} />
             {salaryMessage ? <p className={salaryMessage.includes("guardados") ? "success-text" : "error-text"}>{salaryMessage}</p> : null}
             <Button type="submit">
               Guardar salario

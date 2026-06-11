@@ -23,7 +23,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const { user, signOut } = useAuth();
   const [step, setStep] = useState(0);
   const [businessName, setBusinessName] = useState("Spa Bella");
-  const [ownerSalaryTarget, setOwnerSalaryTarget] = useState("1800000");
+  const [ownerSalaryTarget, setOwnerSalaryTarget] = useState<number | undefined>(1800000);
   const [services, setServices] = useState<ServiceDraft[]>(
     defaultServices.map(({ id, name, defaultPrice, estimatedCost, isActive }) => ({
       id,
@@ -227,7 +227,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                   isRequired
                   label="¿Cuánto quieres ganarte al mes?"
                   value={ownerSalaryTarget}
-                  onValueChange={setOwnerSalaryTarget}
+                  onChange={setOwnerSalaryTarget}
                 />
                 <Card className="ui-card setup-summary">
                   <Card.Content>
@@ -280,14 +280,14 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                           <MoneyField
                             isRequired
                             label="Precio"
-                            min={1}
+                            minValue={1}
                             value={service.defaultPrice}
-                            onValueChange={(value: string) => updateService(service.id, { defaultPrice: Number(value) })}
+                            onChange={(value) => updateService(service.id, { defaultPrice: value ?? 0 })}
                           />
                           <MoneyField
                             label="Costo"
                             value={service.estimatedCost}
-                            onValueChange={(value: string) => updateService(service.id, { estimatedCost: Number(value) })}
+                            onChange={(value) => updateService(service.id, { estimatedCost: value ?? 0 })}
                           />
                         </div>
                         <Button
@@ -352,7 +352,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                         <MoneyField
                           label="Valor"
                           value={expense.amount}
-                          onValueChange={(value: string) => updateFixedExpense(expense.id, { amount: Number(value) })}
+                          onChange={(value) => updateFixedExpense(expense.id, { amount: value ?? 0 })}
                         />
                         <Button
                           className="danger-inline"
@@ -398,7 +398,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                   <Card className="ui-card setup-summary">
                     <Card.Content>
                       <span>Mi salario objetivo</span>
-                      <strong>{formatCurrency(Number(ownerSalaryTarget) || 0)}</strong>
+                      <strong>{formatCurrency(ownerSalaryTarget || 0)}</strong>
                     </Card.Content>
                   </Card>
                 </div>

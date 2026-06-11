@@ -169,7 +169,7 @@ function QuickActionFab({ onSelect }: { onSelect: (type: TransactionType) => voi
           <Button onPress={() => choose("income")}>
             Venta
           </Button>
-          <Button variant="secondary" onPress={() => choose("expense")}>
+          <Button variant="secondary" className="btn-expense" onPress={() => choose("expense")}>
             Gasto
           </Button>
           <Button variant="secondary" onPress={() => choose("withdrawal")}>
@@ -206,7 +206,7 @@ function RegisterMovementSheet({
   const [serviceId, setServiceId] = useState(activeServices[0]?.id ?? "");
   const [categoryId, setCategoryId] = useState(activeCategories[0]?.id ?? "");
   const selectedService = activeServices.find((service) => service.id === serviceId);
-  const [amount, setAmount] = useState(initialType === "income" ? selectedService?.defaultPrice.toString() ?? "" : "");
+  const [amount, setAmount] = useState<number | undefined>(initialType === "income" ? selectedService?.defaultPrice : undefined);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [expenseType, setExpenseType] = useState<ExpenseType>("variable");
   const [date, setDate] = useState(defaultTransactionDate());
@@ -230,21 +230,21 @@ function RegisterMovementSheet({
     if (nextType === "income") {
       const nextService = activeServices.find((service) => service.id === serviceId) ?? activeServices[0];
       setServiceId(nextService?.id ?? "");
-      setAmount(nextService?.defaultPrice.toString() ?? "");
+      setAmount(nextService?.defaultPrice);
     } else {
-      setAmount("");
+      setAmount(undefined);
     }
   }
 
   function changeService(nextServiceId: string) {
     const nextService = activeServices.find((service) => service.id === nextServiceId);
     setServiceId(nextServiceId);
-    setAmount(nextService?.defaultPrice.toString() ?? "");
+    setAmount(nextService?.defaultPrice);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const numericAmount = Number(amount);
+    const numericAmount = amount ?? 0;
     const parsed = transactionSchema.safeParse({ amount: numericAmount, date, paymentMethod, notes });
 
     if (!parsed.success) {
@@ -287,7 +287,7 @@ function RegisterMovementSheet({
           <Button variant={type === "income" ? "primary" : "tertiary"} onPress={() => changeType("income")}>
             Venta
           </Button>
-          <Button variant={type === "expense" ? "primary" : "tertiary"} onPress={() => changeType("expense")}>
+          <Button variant={type === "expense" ? "primary" : "tertiary"} className={type === "expense" ? "segmented--expense" : ""} onPress={() => changeType("expense")}>
             Gasto
           </Button>
           <Button
@@ -338,7 +338,7 @@ function RegisterMovementSheet({
           </>
         ) : null}
 
-        <MoneyField isRequired label="Valor" min={1} value={amount} onValueChange={setAmount} />
+        <MoneyField isRequired label="Valor" minValue={1} value={amount} onChange={setAmount} />
 
         <OptionGroup
           items={[
@@ -376,7 +376,7 @@ function RegisterMovementSheet({
           />
         </TextField>
 
-        {type === "withdrawal" && Number(amount) > monthly.available ? (
+        {type === "withdrawal" && (amount ?? 0) > monthly.available ? (
           <p className="warning-text">Este pago supera el dinero disponible del negocio. Puedes guardarlo si así lo decides.</p>
         ) : null}
         {type === "withdrawal" ? (

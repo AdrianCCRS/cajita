@@ -87,10 +87,9 @@ describe("SkeletonCard", () => {
 
 describe("MoneyField", () => {
   it("muestra label y campo numerico", () => {
-    render(<MoneyField label="Valor" value={35000} onValueChange={() => {}} />);
+    render(<MoneyField label="Valor" value={35000} onChange={() => {}} />);
     expect(screen.getByText("Valor")).toBeTruthy();
-    const input = screen.getByPlaceholderText("Ej. 35000") as HTMLInputElement;
-    expect(input).toBeTruthy();
+    expect(screen.getByPlaceholderText("Ej. 35000")).toBeTruthy();
   });
 
   it("muestra mensaje de error cuando es invalido", () => {
@@ -98,7 +97,7 @@ describe("MoneyField", () => {
       <MoneyField
         label="Valor"
         value={0}
-        onValueChange={() => {}}
+        onChange={() => {}}
         isInvalid
         errorMessage="El valor debe ser mayor a $0"
       />,
