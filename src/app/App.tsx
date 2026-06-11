@@ -12,7 +12,7 @@ import { HistoryPlaceholder } from "../features/transactions/HistoryPlaceholder"
 import { ServicesPlaceholder } from "../features/services/ServicesPlaceholder";
 import { SettingsPlaceholder } from "../features/settings/SettingsPlaceholder";
 import { getDoc } from "firebase/firestore";
-import { Card, CardContent } from "../shared/components/ui";
+import { Card } from "../shared/components/ui";
 
 export function App() {
   return (
@@ -107,11 +107,11 @@ function LoadingScreen({ message }: { message: string }) {
   return (
     <main className="auth-screen">
       <Card className="auth-panel ui-card">
-        <CardContent>
+        <Card.Content>
           <p className="eyebrow">Control financiero</p>
           <h1>Spa Control</h1>
           <p>{message}</p>
-        </CardContent>
+        </Card.Content>
       </Card>
     </main>
   );

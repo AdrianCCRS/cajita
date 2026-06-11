@@ -1,7 +1,7 @@
 import { Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { BottomSheet, Button, Card, CardContent, ConfirmDialog, EmptyState, ScreenHero } from "../../shared/components/ui";
+import { BottomSheet, Button, Card, ConfirmDialog, EmptyState, ScreenHero } from "../../shared/components/ui";
 import { useSpaData } from "../../shared/data/SpaDataContext";
 import type { Transaction, TransactionType } from "../../shared/types/domain";
 import { formatDateShort } from "../../shared/utils/dates";
@@ -70,7 +70,7 @@ export function HistoryPlaceholder() {
         <div className="list-stack">
           {visibleTransactions.map((transaction) => (
             <Card className="ui-card list-row movement-row" key={transaction.id} onClick={() => setSelectedTransaction(transaction)} role="button" tabIndex={0}>
-              <CardContent>
+              <Card.Content>
                 <div>
                   <span>{getTransactionLabel(transaction.type)}</span>
                   <strong>{transaction.serviceName ?? transaction.categoryName ?? transaction.notes ?? "Movimiento"}</strong>
@@ -89,7 +89,7 @@ export function HistoryPlaceholder() {
                     <Trash2 aria-hidden="true" size={18} />
                   </Button>
                 </div>
-              </CardContent>
+              </Card.Content>
             </Card>
           ))}
         </div>
@@ -136,10 +136,10 @@ export function HistoryPlaceholder() {
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
     <Card className="ui-card">
-      <CardContent>
+      <Card.Content>
         <span>{label}</span>
         <strong>{value}</strong>
-      </CardContent>
+      </Card.Content>
     </Card>
   );
 }

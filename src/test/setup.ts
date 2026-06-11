@@ -3,9 +3,37 @@ import { vi } from "vitest";
 import React from "react";
 
 vi.mock("@heroui/react", () => {
-  const createMock = (displayName: string, compound?: Record<string, unknown>) => {
-    const Comp = React.forwardRef(({ children, ...props }: Record<string, unknown>, ref: unknown) =>
-      React.createElement("div", { ...props, ref, "data-testid": displayName }, children),
+  const herouiOnlyProps = new Set([
+    "isDisabled",
+    "isIconOnly",
+    "isInvalid",
+    "isOpen",
+    "isPending",
+    "isRequired",
+    "onOpenChange",
+    "variant",
+  ]);
+
+  function cleanProps(props: Record<string, any>) {
+    const domProps: Record<string, any> = {};
+
+    Object.entries(props).forEach(([key, value]) => {
+      if (key === "onPress") {
+        domProps.onClick = value;
+        return;
+      }
+
+      if (!herouiOnlyProps.has(key)) {
+        domProps[key] = value;
+      }
+    });
+
+    return domProps;
+  }
+
+  const createMock = (displayName: string, compound?: Record<string, React.ComponentType<any>>) => {
+    const Comp = React.forwardRef<HTMLDivElement, { children?: React.ReactNode }>(({ children, ...props }, _ref) =>
+      React.createElement("div", { ...cleanProps(props), "data-testid": displayName }, children),
     );
     Comp.displayName = displayName;
     if (compound) {
@@ -46,9 +74,6 @@ vi.mock("@heroui/react", () => {
   return {
     Button: createMock("Button"),
     Card,
-    CardContent: createMock("CardContent"),
-    CardFooter: createMock("CardFooter"),
-    CardHeader: createMock("CardHeader"),
     Chip: createMock("Chip"),
     Drawer,
     FieldError: createMock("FieldError"),

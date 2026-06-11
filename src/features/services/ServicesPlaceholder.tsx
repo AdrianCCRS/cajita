@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Button, Card, CardContent, EmptyState, Input, Label, MoneyField, ScreenHero, TextField } from "../../shared/components/ui";
+import { Button, Card, EmptyState, Input, Label, MoneyField, ScreenHero, TextField } from "../../shared/components/ui";
 import { useSpaData } from "../../shared/data/SpaDataContext";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
 import { getServiceMargin } from "../../shared/utils/financials";
@@ -57,7 +57,7 @@ export function ServicesPlaceholder() {
       <ScreenHero title="Servicios">Configura nombres, precios y costos aproximados. Las ventas guardan copia histórica.</ScreenHero>
 
       <Card className="ui-card form-card">
-        <CardContent>
+        <Card.Content>
           <form className="form-stack" onSubmit={handleSubmit}>
             <h3>{editingId ? "Editar servicio" : "Agregar servicio"}</h3>
             <TextField
@@ -87,14 +87,14 @@ export function ServicesPlaceholder() {
               ) : null}
             </div>
           </form>
-        </CardContent>
+        </Card.Content>
       </Card>
 
       <div className="list-stack">
         {services.length ? (
           services.map((service) => (
             <Card className={service.isActive ? "ui-card list-row" : "ui-card list-row muted"} key={service.id}>
-              <CardContent>
+              <Card.Content>
                 <div>
                   <span>{service.isActive ? "Activo" : "Inactivo"}</span>
                   <strong>{service.name}</strong>
@@ -111,7 +111,7 @@ export function ServicesPlaceholder() {
                     </Button>
                   ) : null}
                 </div>
-              </CardContent>
+              </Card.Content>
             </Card>
           ))
         ) : (

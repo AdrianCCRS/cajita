@@ -1,7 +1,7 @@
 import { Plus, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "../../shared/auth/AuthContext";
-import { Button, Card, CardContent, CardHeader, Chip, Input, Label, MoneyField, ProgressBar, TextField } from "../../shared/components/ui";
+import { Button, Card, Chip, Input, Label, MoneyField, ProgressBar, TextField } from "../../shared/components/ui";
 import { db } from "../../shared/lib/firebase";
 import type { ExpenseCategory, FixedExpense, Service } from "../../shared/types/domain";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
@@ -206,10 +206,10 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         <form className="onboarding-form" onSubmit={handleSubmit}>
           {step === 0 ? (
             <Card className="ui-card onboarding-step">
-              <CardHeader>
+              <Card.Header>
                 <h2>Tu negocio</h2>
-              </CardHeader>
-              <CardContent>
+              </Card.Header>
+              <Card.Content>
                 <TextField
                   className="form-control"
                   isRequired
@@ -230,21 +230,21 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                   onValueChange={setOwnerSalaryTarget}
                 />
                 <Card className="ui-card setup-summary">
-                  <CardContent>
+                  <Card.Content>
                     <span>Moneda</span>
                     <strong>COP</strong>
-                  </CardContent>
+                  </Card.Content>
                 </Card>
-              </CardContent>
+              </Card.Content>
             </Card>
           ) : null}
 
           {step === 1 ? (
             <Card className="ui-card onboarding-step">
-              <CardHeader>
+              <Card.Header>
                 <h2>Servicios iniciales</h2>
-              </CardHeader>
-              <CardContent>
+              </Card.Header>
+              <Card.Content>
                 <div className="add-row">
                   <Input
                     aria-label="Nuevo servicio"
@@ -263,7 +263,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                 <div className="editable-list">
                   {activeServices.map((service) => (
                     <Card className="ui-card editable-item" key={service.id}>
-                      <CardContent>
+                      <Card.Content>
                         <TextField
                           className="form-control"
                           name={`service-${service.id}-name`}
@@ -298,25 +298,25 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                           <Trash2 aria-hidden="true" size={17} />
                           Quitar
                         </Button>
-                      </CardContent>
+                      </Card.Content>
                     </Card>
                   ))}
                 </div>
-              </CardContent>
+              </Card.Content>
             </Card>
           ) : null}
 
           {step === 2 ? (
             <Card className="ui-card onboarding-step">
-              <CardHeader>
+              <Card.Header>
                 <h2>Gastos fijos</h2>
-              </CardHeader>
-              <CardContent>
+              </Card.Header>
+              <Card.Content>
                 <Card className="ui-card setup-summary">
-                  <CardContent>
+                  <Card.Content>
                     <span>Total mensual</span>
                     <strong>{formatCurrency(totalFixedExpenses)}</strong>
-                  </CardContent>
+                  </Card.Content>
                 </Card>
                 <div className="add-row">
                   <Input
@@ -336,7 +336,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                 <div className="editable-list">
                   {visibleFixedExpenses.map((expense) => (
                     <Card className="ui-card editable-item compact-item" key={expense.id}>
-                      <CardContent>
+                      <Card.Content>
                         <TextField
                           className="form-control"
                           name={`fixed-expense-${expense.id}-name`}
@@ -362,48 +362,48 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                           <Trash2 aria-hidden="true" size={17} />
                           Quitar
                         </Button>
-                      </CardContent>
+                      </Card.Content>
                     </Card>
                   ))}
                 </div>
-              </CardContent>
+              </Card.Content>
             </Card>
           ) : null}
 
           {step === 3 ? (
             <Card className="ui-card onboarding-step">
-              <CardHeader>
+              <Card.Header>
                 <h2>Resumen</h2>
-              </CardHeader>
-              <CardContent>
+              </Card.Header>
+              <Card.Content>
                 <div className="summary-grid">
                   <Card className="ui-card setup-summary">
-                    <CardContent>
+                    <Card.Content>
                       <span>Negocio</span>
                       <strong>{businessName}</strong>
-                    </CardContent>
+                    </Card.Content>
                   </Card>
                   <Card className="ui-card setup-summary">
-                    <CardContent>
+                    <Card.Content>
                       <span>Servicios activos</span>
                       <strong>{activeServices.length}</strong>
-                    </CardContent>
+                    </Card.Content>
                   </Card>
                   <Card className="ui-card setup-summary">
-                    <CardContent>
+                    <Card.Content>
                       <span>Gastos fijos</span>
                       <strong>{formatCurrency(totalFixedExpenses)}</strong>
-                    </CardContent>
+                    </Card.Content>
                   </Card>
                   <Card className="ui-card setup-summary">
-                    <CardContent>
+                    <Card.Content>
                       <span>Mi salario objetivo</span>
                       <strong>{formatCurrency(Number(ownerSalaryTarget) || 0)}</strong>
-                    </CardContent>
+                    </Card.Content>
                   </Card>
                 </div>
                 <p className="hint-text">Si algo no está perfecto, puedes ajustarlo después en Configuración.</p>
-              </CardContent>
+              </Card.Content>
             </Card>
           ) : null}
 

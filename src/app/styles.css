@@ -50,7 +50,7 @@ select {
   font: inherit;
 }
 
-button {
+/* button {
   min-height: 42px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -60,7 +60,7 @@ button {
   font-weight: 800;
   cursor: pointer;
   touch-action: manipulation;
-}
+} */
 
 button:disabled {
   cursor: not-allowed;

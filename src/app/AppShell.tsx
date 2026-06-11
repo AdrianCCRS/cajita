@@ -1,19 +1,21 @@
 import { CircleDollarSign, Home, ListChecks, Scissors, Settings, X } from "lucide-react";
-import { useMemo, useState, type FormEvent } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { useMemo, useState, type FormEvent, type Key } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../shared/auth/AuthContext";
 import { defaultTransactionDate, useSpaData } from "../shared/data/SpaDataContext";
 import type { ExpenseType, PaymentMethod, Transaction, TransactionType } from "../shared/types/domain";
 import { formatCurrency } from "../shared/utils/formatCurrency";
 import { getEstimatedProfit, getMonthlyExpenses, getMonthlyIncome, getMonthlyWithdrawals } from "../shared/utils/financials";
 import { transactionSchema } from "../shared/validation/schemas";
-import { BottomSheet, Button, Card, CardContent, Chip, Label, MoneyField, SkeletonCard, TextArea, TextField, ToastRegion } from "../shared/components/ui";
+import { BottomSheet, Button, Card, Chip, Label, MoneyField, SkeletonCard, TextArea, TextField, ToastRegion } from "../shared/components/ui";
+import {Dropdown, Avatar} from "@heroui/react";
+import {ArrowRightFromSquare} from "@gravity-ui/icons";
 
 const navItems = [
-  { to: "/", label: "Inicio", icon: Home },
-  { to: "/historial", label: "Historial", icon: ListChecks },
-  { to: "/servicios", label: "Servicios", icon: Scissors },
-  { to: "/configuracion", label: "Config", icon: Settings },
+  { id: "inicio", to: "/", label: "Inicio", icon: Home },
+  { id: "historial", to: "/historial", label: "Historial", icon: ListChecks },
+  { id: "servicios", to: "/servicios", label: "Servicios", icon: Scissors },
+  { id: "configuracion", to: "/configuracion", label: "Configuración", icon: Settings },
 ];
 
 type Toast = {
@@ -27,7 +29,8 @@ export function AppShell() {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [initialType, setInitialType] = useState<TransactionType>("income");
   const [toast, setToast] = useState<Toast | null>(null);
-  const { isFirebaseEnabled, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { isFirebaseEnabled, signOut, user } = useAuth();
   const { business, source, isLoading, error } = useSpaData();
 
   function openRegister(type: TransactionType) {
@@ -40,6 +43,18 @@ export function AppShell() {
     window.setTimeout(() => setToast(null), nextToast.actionLabel ? 5000 : 3000);
   }
 
+  async function handleMenuAction(key: Key) {
+    if (key === "logout") {
+      await signOut();
+      return;
+    }
+
+    const selectedItem = navItems.find((item) => item.id === key);
+    if (selectedItem) {
+      navigate(selectedItem.to);
+    }
+  }
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -48,13 +63,43 @@ export function AppShell() {
           <h1>Spa Control</h1>
         </div>
         <div className="header-actions">
-          <Chip color={source === "firebase" ? "success" : "warning"} size="sm" variant="secondary">
-            {source === "firebase" ? "Firebase" : "Demo local"}
-          </Chip>
           {isFirebaseEnabled ? (
-            <Button size="sm" variant="outline" onPress={() => void signOut()}>
-              Salir
-            </Button>
+            <Dropdown>
+              <Dropdown.Trigger>
+                <Avatar size="lg" variant="soft" color="accent">
+                  <Avatar.Fallback delayMs={600}>{getFirstLetters(business.name)}</Avatar.Fallback>
+                </Avatar>
+              </Dropdown.Trigger>
+              <Dropdown.Popover>
+                <div className="px-3 pt-3 pb-1">
+                  <div className="flex items-center gap-2">
+                    <Avatar size="md">
+                      <Avatar.Fallback>{getFirstLetters(business.name)}</Avatar.Fallback>
+                    </Avatar>
+                    <div className="flex flex-col gap-0">
+                      <p className="text-sm leading-5 font-medium">{business.name}</p>
+                      <p className="text-xs leading-none text-muted">{user?.email ?? "Sin correo disponible"}</p>
+                    </div>
+                  </div>
+                </div>
+                <Dropdown.Menu onAction={handleMenuAction}>
+                  {navItems.map((item) => (
+                    <Dropdown.Item key={item.id} id={item.id} textValue={item.label}>
+                      <div className="flex w-full items-center justify-between gap-2">
+                        <Label>{item.label}</Label>
+                        <item.icon className="size-3.5 text-muted" />
+                      </div>
+                    </Dropdown.Item>
+                  ))}
+                  <Dropdown.Item id="logout" textValue="Logout" variant="danger">
+                    <div className="flex w-full items-center justify-between gap-2">
+                      <Label>Salir</Label>
+                      <ArrowRightFromSquare className="size-3.5 text-danger" />
+                    </div>
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown>
           ) : null}
         </div>
       </header>
@@ -68,13 +113,13 @@ export function AppShell() {
         ) : null}
         {error ? (
           <Card className="ui-card error-panel">
-            <CardContent>
+            <Card.Content>
               <strong>Algo salió mal.</strong>
               <p>{error}</p>
               <Button variant="outline" onPress={() => window.location.reload()}>
                 Reintentar
               </Button>
-            </CardContent>
+            </Card.Content>
           </Card>
         ) : null}
         <Outlet context={{ openRegister, showToast }} />
@@ -401,4 +446,12 @@ function buildSuccessMessage(transaction: Transaction, previousWithdrawals: numb
   return `¡Te pagaste ${formatCurrency(transaction.amount)}! Ya llevas ${formatCurrency(
     previousWithdrawals + transaction.amount,
   )} de tu meta mensual.`;
+}
+
+function getFirstLetters(name: string) {
+  const parts = name.trim().split(" ");
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return (parts[0][0] + parts[1][0]).toUpperCase();
 }

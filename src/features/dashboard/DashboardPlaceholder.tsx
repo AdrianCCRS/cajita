@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { Button, Card, CardContent, HelpDrawer, MetricCard, ProgressBar, ScreenHero } from "../../shared/components/ui";
+import { Button, Card, HelpDrawer, MetricCard, ProgressBar, ScreenHero } from "../../shared/components/ui";
 import { useSpaData } from "../../shared/data/SpaDataContext";
 import type { TransactionType } from "../../shared/types/domain";
 import { isToday } from "../../shared/utils/dates";
@@ -158,7 +158,7 @@ export function DashboardPlaceholder() {
       </div>
 
       <Card className="ui-card wide-card">
-        <CardContent>
+        <Card.Content>
           <div className="section-heading">
             <div>
               <span>Meta mínima para no perder plata</span>
@@ -177,11 +177,11 @@ export function DashboardPlaceholder() {
           <Button variant="ghost" onPress={() => setHelpKey("breakEven")}>
             Entender esta meta
           </Button>
-        </CardContent>
+        </Card.Content>
       </Card>
 
       <Card className="ui-card wide-card">
-        <CardContent>
+        <Card.Content>
           <div className="section-heading">
             <div>
               <span>Avance de mi salario</span>
@@ -195,7 +195,7 @@ export function DashboardPlaceholder() {
           <Button variant="ghost" onPress={() => openRegister("withdrawal")}>
             Registrar pago
           </Button>
-        </CardContent>
+        </Card.Content>
       </Card>
 
       <div className="placeholder-grid">

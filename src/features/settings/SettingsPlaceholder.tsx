@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Button, Card, CardContent, Input, Label, MetricCard, MoneyField, ScreenHero, TextField } from "../../shared/components/ui";
+import { Button, Card, Input, Label, MetricCard, MoneyField, ScreenHero, TextField } from "../../shared/components/ui";
 import { useSpaData } from "../../shared/data/SpaDataContext";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
 import { getTotalFixedExpenses } from "../../shared/utils/financials";
@@ -64,7 +64,7 @@ export function SettingsPlaceholder() {
       </div>
 
       <Card className="ui-card form-card">
-        <CardContent>
+        <Card.Content>
           <form className="form-stack" onSubmit={handleFixedExpense}>
             <h3>{editingExpenseId ? "Editar gasto fijo" : "Gastos fijos mensuales"}</h3>
             <TextField
@@ -102,13 +102,13 @@ export function SettingsPlaceholder() {
               ) : null}
             </div>
           </form>
-        </CardContent>
+        </Card.Content>
       </Card>
 
       <div className="list-stack">
         {fixedExpenses.map((expense) => (
           <Card className="ui-card list-row" key={expense.id}>
-            <CardContent>
+            <Card.Content>
               <div>
                 <span>Mensual</span>
                 <strong>{expense.name}</strong>
@@ -119,13 +119,13 @@ export function SettingsPlaceholder() {
                   Editar
                 </Button>
               </div>
-            </CardContent>
+            </Card.Content>
           </Card>
         ))}
       </div>
 
       <Card className="ui-card form-card">
-        <CardContent>
+        <Card.Content>
           <form className="form-stack" onSubmit={handleSalary}>
             <h3>Mi salario</h3>
             <MoneyField isRequired label="¿Cuánto quieres ganarte al mes?" value={salaryTarget} onValueChange={setSalaryTarget} />
@@ -134,7 +134,7 @@ export function SettingsPlaceholder() {
               Guardar salario
             </Button>
           </form>
-        </CardContent>
+        </Card.Content>
       </Card>
     </section>
   );

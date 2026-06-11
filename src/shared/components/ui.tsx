@@ -1,9 +1,6 @@
 import {
   Button,
   Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
   Chip,
   Drawer,
   FieldError,
@@ -32,7 +29,7 @@ type MetricCardProps = {
 export function MetricCard({ title, value, description, tone = "neutral", helpLabel, onHelp }: MetricCardProps) {
   return (
     <Card className={`ui-card metric-card metric-card--${tone}`}>
-      <CardContent className="metric-card__body">
+      <Card.Content className="metric-card__body">
         <div className="metric-card__topline">
           <span>{title}</span>
           {onHelp ? (
@@ -43,7 +40,7 @@ export function MetricCard({ title, value, description, tone = "neutral", helpLa
         </div>
         <strong>{value}</strong>
         {description ? <p>{description}</p> : null}
-      </CardContent>
+      </Card.Content>
     </Card>
   );
 }
@@ -58,7 +55,7 @@ type EmptyStateProps = {
 export function EmptyState({ title, message, actionLabel, onAction }: EmptyStateProps) {
   return (
     <Card className="ui-card empty-state">
-      <CardContent>
+      <Card.Content>
         <div className="empty-state__icon" aria-hidden="true">
           <HelpCircle size={24} />
         </div>
@@ -69,7 +66,7 @@ export function EmptyState({ title, message, actionLabel, onAction }: EmptyState
             {actionLabel}
           </Button>
         ) : null}
-      </CardContent>
+      </Card.Content>
     </Card>
   );
 }
@@ -77,11 +74,11 @@ export function EmptyState({ title, message, actionLabel, onAction }: EmptyState
 export function SkeletonCard() {
   return (
     <Card className="ui-card skeleton-card">
-      <CardContent>
+      <Card.Content>
         <Skeleton className="skeleton-line short" />
         <Skeleton className="skeleton-line tall" />
         <Skeleton className="skeleton-line" />
-      </CardContent>
+      </Card.Content>
     </Card>
   );
 }
@@ -224,16 +221,16 @@ export function HelpDrawer({ isOpen, title, definition, example, decision, onClo
       <div className="help-drawer">
         <p>{definition}</p>
         <Card className="ui-card">
-          <CardContent>
+          <Card.Content>
             <span>Ejemplo en tu spa</span>
             <strong>{example}</strong>
-          </CardContent>
+          </Card.Content>
         </Card>
         <Card className="ui-card">
-          <CardContent>
+          <Card.Content>
             <span>Te ayuda a decidir</span>
             <strong>{decision}</strong>
-          </CardContent>
+          </Card.Content>
         </Card>
       </div>
     </BottomSheet>
@@ -273,12 +270,12 @@ export function ToastRegion({ toast, onDismiss }: { toast: ToastMessage | null; 
 export function ScreenHero({ title, children }: { title: string; children: ReactNode }) {
   return (
     <Card className="ui-card hero-panel">
-      <CardHeader>
+      <Card.Header>
         <h2>{title}</h2>
-      </CardHeader>
-      <CardContent>
+      </Card.Header>
+      <Card.Content>
         <p>{children}</p>
-      </CardContent>
+      </Card.Content>
     </Card>
   );
 }
@@ -292,7 +289,7 @@ export function AddButton({ label, onPress }: { label: string; onPress: () => vo
   );
 }
 
-export { Button, Card, CardContent, CardFooter, CardHeader, Chip, FieldError, Input, Label, ProgressBar, TextArea, TextField };
+export { Button, Card, Chip, FieldError, Input, Label, ProgressBar, TextArea, TextField };
 
 function slugName(value: string) {
   return value

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 import { useAuth } from "../../shared/auth/AuthContext";
-import { Button, Card, CardContent, Input, Label, TextField } from "../../shared/components/ui";
+import { Button, Card, Input, Label, TextField } from "../../shared/components/ui";
 import { authSchema } from "../../shared/validation/schemas";
 
 export function LoginScreen() {
@@ -62,7 +62,7 @@ export function LoginScreen() {
   return (
     <main className="auth-screen">
       <Card className="auth-panel ui-card" aria-labelledby="login-title">
-        <CardContent>
+        <Card.Content>
           <p className="eyebrow">Control financiero</p>
           <h1 id="login-title">Spa Control</h1>
           <p>{mode === "login" ? "Entra para ver cómo va tu negocio hoy." : "Crea tu cuenta privada para empezar."}</p>
@@ -115,7 +115,7 @@ export function LoginScreen() {
               Recuperar contraseña
             </Button>
           </div>
-        </CardContent>
+        </Card.Content>
       </Card>
     </main>
   );
