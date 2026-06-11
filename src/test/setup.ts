@@ -2,6 +2,36 @@ import "@testing-library/jest-dom/vitest";
 import { vi } from "vitest";
 import React from "react";
 
+vi.mock("react-apexcharts", () => ({
+  default: ({
+    options,
+    type,
+  }: {
+    options?: {
+      xaxis?: {
+        categories?: unknown[];
+        labels?: { formatter?: (value: string | number) => string };
+      };
+      yaxis?: {
+        labels?: { formatter?: (value: string | number) => string };
+      };
+    };
+    type?: string;
+  }) => {
+    const firstCategory = options?.xaxis?.categories?.[0] ?? "Manicura";
+    const xAxisPreview = options?.xaxis?.labels?.formatter?.(100000) ?? "";
+    const yAxisPreview = options?.yaxis?.labels?.formatter?.(String(firstCategory)) ?? "";
+
+    return React.createElement("div", {
+      "data-chart-type": type,
+      "data-testid": "ApexChart",
+      "data-xaxis-categories": JSON.stringify(options?.xaxis?.categories ?? []),
+      "data-xaxis-preview": xAxisPreview,
+      "data-yaxis-preview": yAxisPreview,
+    });
+  },
+}));
+
 vi.mock("@heroui/react", () => {
   const herouiOnlyProps = new Set([
     "isDisabled",

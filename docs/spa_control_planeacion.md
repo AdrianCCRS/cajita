@@ -444,7 +444,7 @@ El dashboard debe responder en menos de 5 segundos las preguntas más importante
 ### Gráficas Sugeridas
 
 - **Barra de progreso horizontal:** avance al punto de equilibrio. Limpia y directa.
-- **Barras simples:** ingresos vs. gastos por semana del mes (Recharts `BarChart`).
+- **Barras simples:** ventas vs. gastos por semana del mes (ApexCharts `bar`).
 - **Donut o lista:** distribución de gastos por categoría (solo si cabe en pantalla).
 
 > **Principio:** Si una gráfica no cabe cómodamente en pantalla de celular sin hacer scroll horizontal, no va en el MVP.
@@ -524,7 +524,7 @@ Cada tarjeta se activa tocando el ícono ⓘ junto al indicador. Aparece como dr
 | Hosting | Firebase Hosting | CDN global, HTTPS, despliegue simple con CLI. |
 | UI Components | HeroUI (ex-NextUI) | Componentes accesibles, mobile-friendly, bien mantenidos. |
 | Formularios | React Hook Form + Zod | Validación performante y tipada. Sin re-renders excesivos. |
-| Gráficas | Recharts | Ligero, basado en SVG, fácil de integrar con React. |
+| Gráficas | ApexCharts | Graficas simples, mobile-first y faciles de integrar con React. |
 | Fechas | date-fns | Ligero, funcional. Locale `es`. Sin moment.js ni dayjs. |
 | Estado global | React Context + useState | Suficiente para una usuaria. Sin Redux ni Zustand en MVP. |
 | Cloud Functions | Solo si es estrictamente necesario | Ver regla: no usar en MVP si puede evitarse. |

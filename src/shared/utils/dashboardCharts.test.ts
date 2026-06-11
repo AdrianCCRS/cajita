@@ -1,0 +1,290 @@
+import { describe, expect, it } from "vitest";
+import type { Transaction } from "../types/domain";
+import {
+  getDailyIncomeChartData,
+  getExpensesByCategoryChartData,
+  getServicesByCountChartData,
+  getServicesByRevenueChartData,
+  getWeeklyIncomeExpenseChartData,
+} from "./dashboardCharts";
+
+const baseTransaction = {
+  paymentMethod: "cash",
+  createdAt: "2026-06-10T12:00:00.000Z",
+  updatedAt: "2026-06-10T12:00:00.000Z",
+} as const;
+
+function transaction(input: Pick<Transaction, "id" | "type" | "amount" | "date"> & Partial<Pick<Transaction, "serviceName" | "categoryName" | "serviceId" | "categoryId">>): Transaction {
+  return {
+    ...baseTransaction,
+    ...input,
+  };
+}
+
+describe("getWeeklyIncomeExpenseChartData", () => {
+  it("agrupa ventas y gastos por semana del mes", () => {
+    const result = getWeeklyIncomeExpenseChartData(
+      [
+        transaction({ id: "income-1", type: "income", amount: 35000, date: "2026-06-01" }),
+        transaction({ id: "income-2", type: "income", amount: 50000, date: "2026-06-08" }),
+        transaction({ id: "expense-1", type: "expense", amount: 12000, date: "2026-06-14" }),
+        transaction({ id: "expense-2", type: "expense", amount: 18000, date: "2026-06-30" }),
+      ],
+      2026,
+      6,
+    );
+
+    expect(result.categories).toEqual(["Sem 1", "Sem 2", "Sem 3", "Sem 4", "Sem 5"]);
+    expect(result.income).toEqual([35000, 50000, 0, 0, 0]);
+    expect(result.expenses).toEqual([0, 12000, 0, 0, 18000]);
+    expect(result.hasMovements).toBe(true);
+  });
+
+  it("excluye retiros de los gastos del negocio", () => {
+    const result = getWeeklyIncomeExpenseChartData(
+      [
+        transaction({ id: "income-1", type: "income", amount: 100000, date: "2026-06-02" }),
+        transaction({ id: "withdrawal-1", type: "withdrawal", amount: 60000, date: "2026-06-02" }),
+      ],
+      2026,
+      6,
+    );
+
+    expect(result.income).toEqual([100000, 0, 0, 0, 0]);
+    expect(result.expenses).toEqual([0, 0, 0, 0, 0]);
+  });
+
+  it("retorna semanas vacias en cero cuando no hay movimientos", () => {
+    const result = getWeeklyIncomeExpenseChartData([], 2026, 2);
+
+    expect(result.categories).toEqual(["Sem 1", "Sem 2", "Sem 3", "Sem 4"]);
+    expect(result.income).toEqual([0, 0, 0, 0]);
+    expect(result.expenses).toEqual([0, 0, 0, 0]);
+    expect(result.hasMovements).toBe(false);
+  });
+
+  it("filtra solo el mes solicitado", () => {
+    const result = getWeeklyIncomeExpenseChartData(
+      [
+        transaction({ id: "may-income", type: "income", amount: 90000, date: "2026-05-31" }),
+        transaction({ id: "june-income", type: "income", amount: 40000, date: "2026-06-01" }),
+        transaction({ id: "july-expense", type: "expense", amount: 20000, date: "2026-07-01" }),
+      ],
+      2026,
+      6,
+    );
+
+    expect(result.income).toEqual([40000, 0, 0, 0, 0]);
+    expect(result.expenses).toEqual([0, 0, 0, 0, 0]);
+  });
+
+  it("respeta fechas al inicio y fin del mes", () => {
+    const result = getWeeklyIncomeExpenseChartData(
+      [
+        transaction({ id: "start", type: "income", amount: 10000, date: "2026-06-01" }),
+        transaction({ id: "end", type: "expense", amount: 8000, date: "2026-06-30" }),
+      ],
+      2026,
+      6,
+    );
+
+    expect(result.income[0]).toBe(10000);
+    expect(result.expenses[4]).toBe(8000);
+  });
+});
+
+describe("getExpensesByCategoryChartData", () => {
+  it("agrupa gastos por categoria ordenados de mayor a menor", () => {
+    const result = getExpensesByCategoryChartData(
+      [
+        transaction({ id: "e1", type: "expense", amount: 40000, date: "2026-06-05", categoryName: "Insumos", categoryId: "cat-1" }),
+        transaction({ id: "e2", type: "expense", amount: 80000, date: "2026-06-10", categoryName: "Arriendo", categoryId: "cat-2" }),
+        transaction({ id: "e3", type: "expense", amount: 30000, date: "2026-06-15", categoryName: "Insumos", categoryId: "cat-1" }),
+      ],
+      2026,
+      6,
+    );
+
+    expect(result.labels).toEqual(["Arriendo", "Insumos"]);
+    expect(result.series).toEqual([80000, 70000]);
+    expect(result.hasData).toBe(true);
+  });
+
+  it("filtra solo el mes actual", () => {
+    const result = getExpensesByCategoryChartData(
+      [
+        transaction({ id: "e1", type: "expense", amount: 50000, date: "2026-05-15", categoryName: "Insumos", categoryId: "cat-1" }),
+        transaction({ id: "e2", type: "expense", amount: 30000, date: "2026-06-10", categoryName: "Insumos", categoryId: "cat-1" }),
+      ],
+      2026,
+      6,
+    );
+
+    expect(result.series).toEqual([30000]);
+  });
+
+  it("retorna hasData false sin gastos", () => {
+    const result = getExpensesByCategoryChartData([], 2026, 6);
+
+    expect(result.labels).toEqual([]);
+    expect(result.series).toEqual([]);
+    expect(result.hasData).toBe(false);
+  });
+
+  it("excluye gastos sin categoryName", () => {
+    const result = getExpensesByCategoryChartData(
+      [
+        transaction({ id: "e1", type: "expense", amount: 50000, date: "2026-06-05", categoryName: "Insumos", categoryId: "cat-1" }),
+        transaction({ id: "e2", type: "expense", amount: 30000, date: "2026-06-10" }),
+      ],
+      2026,
+      6,
+    );
+
+    expect(result.labels).toEqual(["Insumos"]);
+    expect(result.series).toEqual([50000]);
+  });
+
+  it("agrupa gastos historicos cuando no se pasa periodo", () => {
+    const result = getExpensesByCategoryChartData([
+      transaction({ id: "e1", type: "expense", amount: 50000, date: "2026-05-15", categoryName: "Insumos", categoryId: "cat-1" }),
+      transaction({ id: "e2", type: "expense", amount: 30000, date: "2026-06-10", categoryName: "Insumos", categoryId: "cat-1" }),
+    ]);
+
+    expect(result.series).toEqual([80000]);
+  });
+});
+
+describe("getServicesByCountChartData", () => {
+  it("agrupa servicios por cantidad de ventas ordenados de mayor a menor", () => {
+    const result = getServicesByCountChartData(
+      [
+        transaction({ id: "s1", type: "income", amount: 35000, date: "2026-06-01", serviceName: "Manicura", serviceId: "svc-1" }),
+        transaction({ id: "s2", type: "income", amount: 35000, date: "2026-06-05", serviceName: "Manicura", serviceId: "svc-1" }),
+        transaction({ id: "s3", type: "income", amount: 80000, date: "2026-06-03", serviceName: "Cabello", serviceId: "svc-2" }),
+      ],
+      2026,
+      6,
+    );
+
+    expect(result.labels).toEqual(["Manicura", "Cabello"]);
+    expect(result.series).toEqual([2, 1]);
+    expect(result.hasData).toBe(true);
+  });
+
+  it("retorna hasData false sin ventas", () => {
+    const result = getServicesByCountChartData([], 2026, 6);
+
+    expect(result.labels).toEqual([]);
+    expect(result.series).toEqual([]);
+    expect(result.hasData).toBe(false);
+  });
+
+  it("filtra solo el mes actual", () => {
+    const result = getServicesByCountChartData(
+      [
+        transaction({ id: "s1", type: "income", amount: 35000, date: "2026-05-20", serviceName: "Manicura", serviceId: "svc-1" }),
+        transaction({ id: "s2", type: "income", amount: 35000, date: "2026-06-01", serviceName: "Manicura", serviceId: "svc-1" }),
+      ],
+      2026,
+      6,
+    );
+
+    expect(result.series).toEqual([1]);
+  });
+
+  it("agrupa servicios historicos por cantidad cuando no se pasa periodo", () => {
+    const result = getServicesByCountChartData([
+      transaction({ id: "s1", type: "income", amount: 35000, date: "2026-05-20", serviceName: "Manicura", serviceId: "svc-1" }),
+      transaction({ id: "s2", type: "income", amount: 35000, date: "2026-06-01", serviceName: "Manicura", serviceId: "svc-1" }),
+    ]);
+
+    expect(result.series).toEqual([2]);
+  });
+});
+
+describe("getServicesByRevenueChartData", () => {
+  it("agrupa servicios por dinero generado ordenados de mayor a menor", () => {
+    const result = getServicesByRevenueChartData(
+      [
+        transaction({ id: "s1", type: "income", amount: 35000, date: "2026-06-01", serviceName: "Manicura", serviceId: "svc-1" }),
+        transaction({ id: "s2", type: "income", amount: 45000, date: "2026-06-05", serviceName: "Manicura", serviceId: "svc-1" }),
+        transaction({ id: "s3", type: "income", amount: 100000, date: "2026-06-03", serviceName: "Cabello", serviceId: "svc-2" }),
+      ],
+      2026,
+      6,
+    );
+
+    expect(result.labels).toEqual(["Cabello", "Manicura"]);
+    expect(result.series).toEqual([100000, 80000]);
+    expect(result.hasData).toBe(true);
+  });
+
+  it("retorna hasData false sin ventas", () => {
+    const result = getServicesByRevenueChartData([], 2026, 6);
+
+    expect(result.hasData).toBe(false);
+  });
+
+  it("agrupa servicios historicos por ingresos cuando no se pasa periodo", () => {
+    const result = getServicesByRevenueChartData([
+      transaction({ id: "s1", type: "income", amount: 35000, date: "2026-05-20", serviceName: "Manicura", serviceId: "svc-1" }),
+      transaction({ id: "s2", type: "income", amount: 45000, date: "2026-06-01", serviceName: "Manicura", serviceId: "svc-1" }),
+    ]);
+
+    expect(result.series).toEqual([80000]);
+  });
+});
+
+describe("getDailyIncomeChartData", () => {
+  it("acumula ventas por dia del mes", () => {
+    const result = getDailyIncomeChartData(
+      [
+        transaction({ id: "s1", type: "income", amount: 35000, date: "2026-06-01" }),
+        transaction({ id: "s2", type: "income", amount: 50000, date: "2026-06-01" }),
+        transaction({ id: "s3", type: "income", amount: 80000, date: "2026-06-15" }),
+      ],
+      2026,
+      6,
+    );
+
+    expect(result.categories.length).toBeGreaterThanOrEqual(1);
+    expect(result.series[0]).toBe(85000);
+    expect(result.hasData).toBe(true);
+  });
+
+  it("muestra el mes completo para meses pasados", () => {
+    const result = getDailyIncomeChartData(
+      [
+        transaction({ id: "s1", type: "income", amount: 30000, date: "2026-01-15" }),
+        transaction({ id: "s2", type: "income", amount: 20000, date: "2026-01-31" }),
+      ],
+      2026,
+      1,
+    );
+
+    expect(result.categories.length).toBe(31);
+    expect(result.series[14]).toBe(30000);
+    expect(result.series[30]).toBe(20000);
+    expect(result.hasData).toBe(true);
+  });
+
+  it("retorna hasData false sin ventas", () => {
+    const result = getDailyIncomeChartData([], 2026, 6);
+
+    expect(result.hasData).toBe(false);
+  });
+
+  it("filtra solo el mes actual", () => {
+    const result = getDailyIncomeChartData(
+      [
+        transaction({ id: "s1", type: "income", amount: 50000, date: "2026-05-15" }),
+        transaction({ id: "s2", type: "income", amount: 30000, date: "2026-06-10" }),
+      ],
+      2026,
+      6,
+    );
+
+    expect(result.series[9]).toBe(30000);
+  });
+});

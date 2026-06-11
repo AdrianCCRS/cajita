@@ -27,7 +27,7 @@ Lee este archivo completo antes de tocar cualquier código.
 | Hosting | Firebase Hosting | Deploy con `firebase deploy` |
 | UI | HeroUI | Componentes accesibles, mobile-first |
 | Formularios | React Hook Form + Zod | Sin excepciones |
-| Gráficas | Recharts | Solo `BarChart` y `LineChart` simples en MVP |
+| Gráficas | ApexCharts | Graficas simples, mobile-first, sin scroll horizontal |
 | Fechas | date-fns | Locale `es`. No usar moment.js ni dayjs |
 | Estado global | React Context + useState | Sin Redux ni Zustand en MVP |
 | Cloud Functions | Solo si es estrictamente necesario | Ver regla abajo |

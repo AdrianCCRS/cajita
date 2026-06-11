@@ -269,6 +269,10 @@ h3 {
   grid-template-columns: 1fr;
 }
 
+.compact-grid {
+  gap: 10px;
+}
+
 .metric-card {
   box-shadow: none;
 }
@@ -354,6 +358,134 @@ h3 {
 .setup-summary {
   background: var(--surface-soft);
   box-shadow: none;
+}
+
+.dashboard-summary {
+  background:
+    linear-gradient(135deg, oklch(0.98 0.02 168), oklch(1 0 0));
+}
+
+.dashboard-summary > div {
+  gap: 16px;
+}
+
+.dashboard-summary span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.dashboard-summary strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--foreground);
+  font-size: clamp(2rem, 10vw, 3.1rem);
+  line-height: 0.98;
+}
+
+.dashboard-summary p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.summary-metrics > div {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: oklch(1 0 0 / 0.72);
+}
+
+.summary-metrics b {
+  display: block;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+  color: var(--foreground);
+  font-size: 1rem;
+  line-height: 1.1;
+}
+
+.tabs {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px;
+  background: oklch(1 0 0 / 0.92);
+  box-shadow: 0 10px 28px oklch(0.28 0.04 170 / 0.08);
+  backdrop-filter: blur(14px);
+}
+
+.tab {
+  min-width: 0;
+  min-height: 50px;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  text-align: center;
+}
+
+.tab span,
+.tab small {
+  display: block;
+}
+
+.tab span {
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.tab small {
+  margin-top: 2px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  opacity: 0.82;
+}
+
+.tab.active {
+  background: var(--surface-soft);
+  color: var(--business);
+}
+
+.dashboard-tab-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.dashboard-chart-card .section-heading strong {
+  font-size: 1.35rem;
+}
+
+.dashboard-chart {
+  width: 100%;
+  min-width: 0;
+  height: 260px;
+}
+
+.chart-empty-state {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  min-height: 180px;
+  align-content: center;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--surface-soft);
 }
 
 .add-row {
@@ -606,8 +738,22 @@ h3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .summary-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .two-column {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .dashboard-chart {
+    height: 300px;
+  }
+
+  .chart-hbar {
+    height: auto;
+    min-height: 220px;
+    max-height: 420px;
   }
 
   .bottom-nav {

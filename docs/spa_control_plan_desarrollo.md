@@ -21,7 +21,7 @@ Fuente base: `spa_control_planeacion.md`
 
 - MVP privado, no SaaS, no multiusuario, no multiples sedes.
 - Mobile-first: la experiencia principal es celular.
-- Stack base: Vite, React, TypeScript, Firebase Auth, Firestore, Firebase Hosting, HeroUI, React Hook Form, Zod, Recharts y date-fns.
+- Stack base: Vite, React, TypeScript, Firebase Auth, Firestore, Firebase Hosting, HeroUI, React Hook Form, Zod, ApexCharts y date-fns.
 - Sin facturacion electronica, agenda, WhatsApp, inventario avanzado, integraciones bancarias ni contabilidad de partida doble.
 - Los comandos reales de desarrollo se definen cuando se inicialice el proyecto React.
 
@@ -122,7 +122,7 @@ Fuente base: `spa_control_planeacion.md`
 | Construir cards principales del dashboard | 8h | Developer | useDashboard | Ventas, gastos, dinero negocio, salario, ganancia y PE visibles |
 | Agregar barra de avance al punto de equilibrio | 4h | Developer | Dashboard data | Progreso y mensaje simple reflejan el mes actual |
 | Agregar servicio mas vendido y mas rentable | 6h | Developer | Transactions | Indicadores calculan por cantidad y margen |
-| Agregar grafica simple ingresos vs gastos | 6h | Developer | Dashboard data | Recharts renderiza sin scroll horizontal en mobile |
+| Agregar grafica simple ventas vs gastos | 6h | Developer | Dashboard data | ApexCharts renderiza sin scroll horizontal en mobile |
 | Crear estados loading, empty y error del dashboard | 4h | Developer | Dashboard UI | Skeleton, estado vacio y reintento disponibles |
 
 **Deliverable**: Dashboard claro que responde las preguntas financieras principales en menos de 5 segundos.

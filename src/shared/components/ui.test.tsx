@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import {
   BottomSheet,
   ConfirmDialog,
@@ -9,6 +10,7 @@ import {
   MetricCard,
   MoneyField,
   SkeletonCard,
+  Tabs,
   ToastRegion,
 } from "./ui";
 
@@ -222,5 +224,39 @@ describe("ToastRegion", () => {
     );
     expect(screen.getByText("Movimiento eliminado.")).toBeTruthy();
     expect(screen.getByText("Deshacer")).toBeTruthy();
+  });
+});
+
+describe("Tabs", () => {
+  it("muestra la pestana activa y permite cambiarla", async () => {
+    const user = userEvent.setup();
+    let activeTab: "today" | "month" = "today";
+
+    function TestTabs() {
+      const [value, setValue] = useState(activeTab);
+      activeTab = value;
+
+      return (
+        <Tabs
+          ariaLabel="Rango del dashboard"
+          items={[
+            { id: "today", label: "Hoy", description: "Dia" },
+            { id: "month", label: "Mes", description: "Actual" },
+          ]}
+          value={value}
+          onChange={setValue}
+        />
+      );
+    }
+
+    render(<TestTabs />);
+
+    expect(screen.getByRole("tab", { name: /Hoy/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /Mes/ })).toHaveAttribute("aria-selected", "false");
+
+    await user.click(screen.getByRole("tab", { name: /Mes/ }));
+
+    expect(activeTab).toBe("month");
+    expect(screen.getByRole("tab", { name: /Mes/ })).toHaveAttribute("aria-selected", "true");
   });
 });

@@ -13,7 +13,7 @@ import {
   TextField,
 } from "@heroui/react";
 import { AlertTriangle, CheckCircle2, HelpCircle, Info, Plus, X } from "lucide-react";
-import { useCallback, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 type Tone = "neutral" | "income" | "expense" | "business" | "salary" | "profit" | "warning";
 
@@ -308,6 +308,46 @@ export function AddButton({ label, onPress }: { label: string; onPress: () => vo
       <Plus aria-hidden="true" size={18} />
       {label}
     </Button>
+  );
+}
+
+type TabItem<T extends string> = {
+  id: T;
+  label: string;
+  description?: string;
+};
+
+export function Tabs<T extends string>({
+  ariaLabel,
+  items,
+  value,
+  onChange,
+}: {
+  ariaLabel: string;
+  items: TabItem<T>[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div aria-label={ariaLabel} className="tabs" role="tablist">
+      {items.map((item) => {
+        const isSelected = value === item.id;
+
+        return (
+          <button
+            aria-selected={isSelected}
+            className={`tab${isSelected ? " active" : ""}`}
+            key={item.id}
+            role="tab"
+            type="button"
+            onClick={() => onChange(item.id)}
+          >
+            <span>{item.label}</span>
+            {item.description ? <small>{item.description}</small> : null}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
