@@ -149,11 +149,13 @@ export function HistoryPlaceholder() {
           ))}
         </div>
       ) : (
-        <EmptyState
-          actionLabel="Registrar venta"
-          message="Empieza registrando tu primera venta."
-          title="¡Bienvenida a un nuevo mes!"
-          onAction={() => openRegister("income")}
+        <HistoryEmptyState
+          dateFilter={dateFilter}
+          filter={filter}
+          hasAnyTransactions={transactions.length > 0}
+          search={search}
+          onRegister={() => openRegister("income")}
+          onClear={() => { setSearch(""); setFilter("all"); setDateFilter("all"); }}
         />
       )}
 
@@ -203,7 +205,7 @@ function FilterGroup({
       {items.map((item) => (
         <Button
           key={item.id}
-          className={selectedId === item.id && item.id === "expense" ? "segmented--expense" : ""}
+          className={selectedId === item.id && item.id === "expense" ? "segmented--expense" : selectedId === item.id && item.id === "withdrawal" ? "segmented--withdrawal" : ""}
           size="sm"
           variant={selectedId === item.id ? "primary" : "tertiary"}
           onPress={() => onSelect(item.id)}
@@ -213,6 +215,90 @@ function FilterGroup({
       ))}
     </div>
   );
+}
+
+function HistoryEmptyState({
+  dateFilter,
+  filter,
+  hasAnyTransactions,
+  search,
+  onRegister,
+  onClear,
+}: {
+  dateFilter: DateFilter;
+  filter: TransactionType | "all";
+  hasAnyTransactions: boolean;
+  search: string;
+  onRegister: () => void;
+  onClear: () => void;
+}) {
+  const hasActiveFilters = search || filter !== "all" || dateFilter !== "month";
+
+  if (!hasAnyTransactions && !hasActiveFilters) {
+    return (
+      <EmptyState
+        actionLabel="Registrar venta"
+        message="Empieza registrando tu primera venta."
+        title="¡Bienvenida a un nuevo mes!"
+        onAction={onRegister}
+      />
+    );
+  }
+
+  if (search) {
+    return (
+      <EmptyState
+        actionLabel="Limpiar búsqueda"
+        message={`Ningún movimiento coincide con "${search}".`}
+        title="Sin resultados"
+        onAction={onClear}
+      />
+    );
+  }
+
+  if (filter !== "all") {
+    const typeLabel = filter === "income" ? "ventas" : filter === "expense" ? "gastos" : "pagos";
+    return (
+      <EmptyState
+        actionLabel="Ver todos"
+        message={`No hay ${typeLabel} en ${getDateFilterLabel(dateFilter).toLowerCase()}.`}
+        title={`Sin ${getTypeSingular(filter)} registrados`}
+        onAction={onClear}
+      />
+    );
+  }
+
+  if (dateFilter !== "month") {
+    return (
+      <EmptyState
+        actionLabel="Ver todos"
+        message={`No se encontraron movimientos en ${getDateFilterLabel(dateFilter).toLowerCase()}.`}
+        title={dateFilter === "today" ? "Hoy no hay movimientos" : "Sin movimientos en este período"}
+        onAction={onClear}
+      />
+    );
+  }
+
+  return (
+    <EmptyState
+      actionLabel="Registrar venta"
+      message="Empieza registrando tu primera venta."
+      title="¡Bienvenida a un nuevo mes!"
+      onAction={onRegister}
+    />
+  );
+}
+
+function getDateFilterLabel(dateFilter: DateFilter) {
+  if (dateFilter === "today") return "Hoy";
+  if (dateFilter === "lastMonth") return "el mes pasado";
+  return "este período";
+}
+
+function getTypeSingular(type: TransactionType) {
+  if (type === "income") return "ventas";
+  if (type === "expense") return "gastos";
+  return "pagos";
 }
 
 function DetailItem({ label, value }: { label: string; value: string }) {

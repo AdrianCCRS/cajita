@@ -174,7 +174,7 @@ function QuickActionFab({ onSelect }: { onSelect: (type: TransactionType) => voi
             <Receipt aria-hidden="true" size={18} />
             Gasto
           </Button>
-          <Button variant="secondary" onPress={() => choose("withdrawal")}>
+          <Button variant="secondary" className="btn-withdrawal" onPress={() => choose("withdrawal")}>
             <UserRound aria-hidden="true" size={18} />
             Pagarme
           </Button>
@@ -298,6 +298,7 @@ function RegisterMovementSheet({
           <Button
             
             variant={type === "withdrawal" ? "primary" : "tertiary"}
+            className={type === "withdrawal" ? "segmented--withdrawal" : ""}
             onPress={() => changeType("withdrawal")}
           >
             <UserRound aria-hidden="true" size={16} />

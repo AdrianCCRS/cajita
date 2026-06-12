@@ -21,7 +21,7 @@
   --expense: oklch(0.52 0.17 25);
   --expense-soft: oklch(0.92 0.03 25);
   --business: oklch(0.52 0.12 205);
-  --salary: oklch(0.53 0.14 285);
+  --salary: oklch(0.72 0.16 78);
   --profit: oklch(0.55 0.15 325);
   --danger: oklch(0.55 0.18 28);
   --warning: oklch(0.72 0.16 78);
@@ -329,6 +329,16 @@ h3 {
 .segmented--expense {
   background: var(--expense);
   color: oklch(1 0 0);
+}
+
+.btn-withdrawal {
+  border-color: var(--salary);
+  color: var(--salary);
+}
+
+.segmented--withdrawal {
+  background: var(--salary);
+  color: var(--foreground);
 }
 
 .row--expense {

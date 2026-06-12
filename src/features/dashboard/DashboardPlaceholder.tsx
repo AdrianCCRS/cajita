@@ -226,7 +226,7 @@ export function DashboardPlaceholder() {
                   </div>
                   <b>{Math.round(salaryProgress)}%</b>
                 </div>
-                <ProgressBar aria-label="Avance de salario" color="accent" value={Math.min(salaryProgress, 100)} />
+                <ProgressBar aria-label="Avance de salario" color="warning" value={Math.min(salaryProgress, 100)} />
                 <Button variant="ghost" onPress={() => openRegister("withdrawal")}>
                   Registrar pago
                 </Button>
