@@ -339,6 +339,22 @@ h3 {
   color: var(--expense);
 }
 
+.row--income {
+  border-left: 4px solid var(--income);
+}
+
+.row--income span {
+  color: var(--income);
+}
+
+.row--withdrawal {
+  border-left: 4px solid var(--salary);
+}
+
+.row--withdrawal span {
+  color: var(--salary);
+}
+
 .progress--expense [data-slot="fill"] {
   background: var(--expense);
 }
@@ -566,6 +582,82 @@ h3 {
 .option-group {
   display: grid;
   gap: 8px;
+}
+
+.history-controls {
+  box-shadow: none;
+}
+
+.history-controls > div {
+  gap: 12px;
+}
+
+.search-field {
+  position: relative;
+  display: grid;
+}
+
+.search-field svg {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  z-index: 1;
+  color: var(--muted);
+  transform: translateY(-50%);
+}
+
+.search-field input {
+  padding-left: 40px;
+}
+
+.history-filter {
+  padding-bottom: 4px;
+}
+
+.history-groups {
+  display: grid;
+  gap: 18px;
+}
+
+.history-day {
+  display: grid;
+  gap: 10px;
+}
+
+.history-day__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-inline: 2px;
+}
+
+.history-day__header span,
+.history-day__totals span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.history-day__header h2 {
+  margin: 2px 0 0;
+  font-size: 1.12rem;
+  line-height: 1.15;
+}
+
+.history-day__totals {
+  display: grid;
+  gap: 3px;
+  min-width: max-content;
+  text-align: right;
+}
+
+.history-list {
+  gap: 8px;
+}
+
+.history-list .list-row {
+  background: oklch(1 0 0 / 0.86);
 }
 
 .native-date {
