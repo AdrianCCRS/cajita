@@ -376,6 +376,239 @@ h3 {
   box-shadow: none;
 }
 
+.services-overview {
+  box-shadow: none;
+}
+
+.services-overview > div {
+  align-items: center;
+  grid-template-columns: 1fr;
+}
+
+.services-overview__copy {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.services-overview__copy svg,
+.service-margin-preview svg {
+  color: var(--business);
+}
+
+.services-overview__copy span,
+.service-table span,
+.service-table small,
+.status-pill,
+.service-margin-preview span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.services-overview__copy strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--foreground);
+  font-size: 1.25rem;
+  line-height: 1.1;
+}
+
+.service-table-card {
+  overflow: hidden;
+}
+
+.service-table-card > div {
+  padding: 0;
+}
+
+.service-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.service-table {
+  width: 100%;
+  min-width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.service-table caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.service-table th,
+.service-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 12px 10px;
+  vertical-align: middle;
+}
+
+.service-table thead th {
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.service-table tbody tr:last-child th,
+.service-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.service-table tbody th {
+  width: 42%;
+}
+
+.service-table tbody th span {
+  display: block;
+  color: var(--foreground);
+  font-size: 0.96rem;
+}
+
+.service-table tbody th small {
+  display: block;
+  margin-top: 4px;
+}
+
+.service-table td b {
+  color: var(--foreground);
+  white-space: nowrap;
+}
+
+.service-table .optional-column {
+  display: none;
+}
+
+.status-pill {
+  display: inline-grid;
+  min-width: 64px;
+  place-items: center;
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: var(--surface-soft);
+}
+
+.status-pill--active {
+  color: var(--income);
+}
+
+.status-pill--inactive {
+  color: var(--muted);
+}
+
+.table-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.service-margin-preview {
+  box-shadow: none;
+}
+
+.service-margin-preview > div {
+  align-items: center;
+  grid-template-columns: auto 1fr;
+}
+
+.service-margin-preview strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 1.35rem;
+}
+
+.settings-overview {
+  box-shadow: none;
+}
+
+.settings-overview > div {
+  align-items: stretch;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+
+.settings-overview__copy,
+.settings-overview__metrics > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-overview__copy svg,
+.settings-overview__metrics svg {
+  color: var(--business);
+  flex: 0 0 auto;
+}
+
+.settings-overview__copy span,
+.settings-overview__metrics span,
+.settings-overview__metrics small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.settings-overview__copy strong,
+.settings-overview__metrics strong {
+  display: block;
+  color: var(--foreground);
+  line-height: 1.15;
+}
+
+.settings-overview__copy strong {
+  font-size: 1.2rem;
+}
+
+.settings-overview__metrics {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr;
+}
+
+.settings-overview__metrics > div {
+  align-items: flex-start;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.settings-overview__metrics > div > div,
+.settings-overview__copy > div {
+  min-width: 0;
+}
+
+.settings-overview__metrics strong {
+  margin-top: 2px;
+  font-size: 1rem;
+}
+
+.settings-overview__metrics small {
+  display: block;
+  margin-top: 3px;
+}
+
+.settings-overview__actions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.settings-overview__actions button {
+  min-width: 0;
+}
+
+.settings-table tbody th {
+  width: 44%;
+}
+
 .dashboard-summary {
   background:
     linear-gradient(135deg, oklch(0.98 0.02 168), oklch(1 0 0));
@@ -832,6 +1065,28 @@ h3 {
 
   .summary-metrics {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .services-overview > div {
+    grid-template-columns: 1fr auto;
+  }
+
+  .settings-overview > div {
+    align-items: center;
+    grid-template-columns: 0.8fr 1.6fr auto;
+  }
+
+  .settings-overview__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .service-table th,
+  .service-table td {
+    padding: 14px;
+  }
+
+  .service-table .optional-column {
+    display: table-cell;
   }
 
   .two-column {
