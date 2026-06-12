@@ -1,4 +1,4 @@
-import { CircleDollarSign, Home, ListChecks, Scissors, Settings, X } from "lucide-react";
+import { Banknote, CircleDollarSign, Home, ListChecks, Receipt, Scissors, Settings, UserRound, X } from "lucide-react";
 import { useMemo, useState, type FormEvent, type Key } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../shared/auth/AuthContext";
@@ -167,12 +167,15 @@ function QuickActionFab({ onSelect }: { onSelect: (type: TransactionType) => voi
       {isExpanded ? (
         <div className="fab-menu" aria-label="Acciones rápidas">
           <Button onPress={() => choose("income")}>
+            <Banknote aria-hidden="true" size={18} />
             Venta
           </Button>
           <Button variant="secondary" className="btn-expense" onPress={() => choose("expense")}>
+            <Receipt aria-hidden="true" size={18} />
             Gasto
           </Button>
           <Button variant="secondary" onPress={() => choose("withdrawal")}>
+            <UserRound aria-hidden="true" size={18} />
             Pagarme
           </Button>
         </div>
@@ -285,16 +288,19 @@ function RegisterMovementSheet({
       <form className="form-stack register-form" onSubmit={handleSubmit}>
         <div className="segmented" aria-label="Tipo de movimiento">
           <Button variant={type === "income" ? "primary" : "tertiary"} onPress={() => changeType("income")}>
+            <Banknote aria-hidden="true" size={16} />
             Venta
           </Button>
           <Button variant={type === "expense" ? "primary" : "tertiary"} className={type === "expense" ? "segmented--expense" : ""} onPress={() => changeType("expense")}>
+            <Receipt aria-hidden="true" size={16} />
             Gasto
           </Button>
           <Button
-           
+            
             variant={type === "withdrawal" ? "primary" : "tertiary"}
             onPress={() => changeType("withdrawal")}
           >
+            <UserRound aria-hidden="true" size={16} />
             Pagarme
           </Button>
         </div>
