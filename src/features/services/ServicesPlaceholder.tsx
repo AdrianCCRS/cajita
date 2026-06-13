@@ -696,7 +696,7 @@ export function ServicesPlaceholder() {
                     </div>
                   </div>
                   {currentServiceMaterials.length ? (
-                    <div className="material-list">
+                    <div className="material-list flex flex-col gap-3">
                       {currentServiceMaterials.map((material) => (
                         <MaterialRow
                           key={material.id}
