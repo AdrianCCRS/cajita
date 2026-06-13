@@ -16,6 +16,15 @@ const filters: Array<{ id: TransactionType | "all"; label: string }> = [
 
 type DateFilter = "today" | "month" | "lastMonth" | "all";
 type SortMode = "recent" | "highest" | "lowest";
+type SaleServiceGroup = {
+  key: string;
+  serviceName: string;
+  transactions: Transaction[];
+  count: number;
+  total: number;
+  profit: number | null;
+  latestDate: string;
+};
 
 const dateFilters: Array<{ id: DateFilter; label: string }> = [
   { id: "today", label: "Hoy" },
@@ -41,18 +50,25 @@ export function HistoryPlaceholder() {
   const [sortMode, setSortMode] = useState<SortMode>("recent");
   const [search, setSearch] = useState("");
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [selectedSaleGroup, setSelectedSaleGroup] = useState<SaleServiceGroup | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Transaction | null>(null);
-  const groupedTransactions = useMemo(
-    () => groupTransactions(
-      transactions
-        .filter((transaction) => filter === "all" || transaction.type === filter)
-        .filter((transaction) => matchesDateFilter(transaction, dateFilter))
-        .filter((transaction) => matchesSearch(transaction, search))
-        .sort((a, b) => sortTransactions(a, b, sortMode)),
-    ),
+  const filteredTransactions = useMemo(
+    () => transactions
+      .filter((transaction) => filter === "all" || transaction.type === filter)
+      .filter((transaction) => matchesDateFilter(transaction, dateFilter))
+      .filter((transaction) => matchesSearch(transaction, search))
+      .sort((a, b) => sortTransactions(a, b, sortMode)),
     [dateFilter, filter, search, sortMode, transactions],
   );
-  const visibleCount = groupedTransactions.reduce((total, group) => total + group.transactions.length, 0);
+  const saleGroups = useMemo(
+    () => groupSalesByService(filteredTransactions).sort((a, b) => sortSaleGroups(a, b, sortMode)),
+    [filteredTransactions, sortMode],
+  );
+  const groupedTransactions = useMemo(
+    () => groupTransactions(filteredTransactions.filter((transaction) => transaction.type !== "income")),
+    [filteredTransactions],
+  );
+  const visibleCount = saleGroups.length + groupedTransactions.reduce((total, group) => total + group.transactions.length, 0);
 
   async function confirmDelete() {
     if (!pendingDelete) {
@@ -116,6 +132,40 @@ export function HistoryPlaceholder() {
 
       {visibleCount ? (
         <div className="history-groups">
+          {saleGroups.length ? (
+            <section className="history-day history-sales-summary" aria-labelledby="history-sales-summary">
+              <div className="history-day__header">
+                <div>
+                  <span>{saleGroups.reduce((total, group) => total + group.count, 0)} ventas</span>
+                  <h2 id="history-sales-summary">Ventas por servicio</h2>
+                </div>
+                <div className="history-day__totals" aria-label="Resumen de ventas agrupadas">
+                  <span>Total {formatCurrency(saleGroups.reduce((total, group) => total + group.total, 0))}</span>
+                </div>
+              </div>
+
+              <div className="list-stack history-list">
+                {saleGroups.map((group) => (
+                  <Card className="ui-card list-row movement-row row--income" key={group.key} onClick={() => setSelectedSaleGroup(group)} role="button" tabIndex={0}>
+                    <Card.Content>
+                      <div>
+                        <span>Venta agrupada · {group.count} {group.count === 1 ? "venta" : "ventas"}</span>
+                        <strong>{group.serviceName}</strong>
+                        <p>Última venta: {formatDateShort(group.latestDate)}</p>
+                      </div>
+                      <div className="row-actions">
+                        <b>{formatCurrency(group.total)}</b>
+                        {group.profit !== null ? (
+                          <span className="movement-profit">Ganancia {formatCurrency(group.profit)}</span>
+                        ) : null}
+                      </div>
+                    </Card.Content>
+                  </Card>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
           {groupedTransactions.map((group) => (
             <section className="history-day" key={group.dateKey} aria-labelledby={`history-${group.dateKey}`}>
               <div className="history-day__header">
@@ -124,8 +174,8 @@ export function HistoryPlaceholder() {
                   <h2 id={`history-${group.dateKey}`}>{group.title}</h2>
                 </div>
                 <div className="history-day__totals" aria-label={`Resumen de ${group.title}`}>
-                  <span>Ventas {formatCurrency(group.income)}</span>
-                  <span>Gastos {formatCurrency(group.expenses)}</span>
+                  {group.expenses ? <span>Gastos {formatCurrency(group.expenses)}</span> : null}
+                  {group.withdrawals ? <span>Pagarme {formatCurrency(group.withdrawals)}</span> : null}
                 </div>
               </div>
 
@@ -179,6 +229,17 @@ export function HistoryPlaceholder() {
               <Trash2 aria-hidden="true" size={18} />
               Eliminar movimiento
             </Button>
+          </div>
+        </BottomSheet>
+      ) : null}
+
+      {selectedSaleGroup ? (
+        <BottomSheet isOpen title={selectedSaleGroup.serviceName} eyebrow="Ventas agrupadas" onClose={() => setSelectedSaleGroup(null)}>
+          <div className="detail-list">
+            <DetailItem label="Total vendido" value={formatCurrency(selectedSaleGroup.total)} />
+            <DetailItem label="Cantidad de ventas" value={`${selectedSaleGroup.count}`} />
+            {selectedSaleGroup.profit !== null ? <DetailItem label="Ganancia real" value={formatCurrency(selectedSaleGroup.profit)} /> : null}
+            <DetailItem label="Última venta" value={formatDateShort(selectedSaleGroup.latestDate)} />
           </div>
         </BottomSheet>
       ) : null}
@@ -337,6 +398,34 @@ function groupTransactions(transactions: Transaction[]) {
   }));
 }
 
+function groupSalesByService(transactions: Transaction[]): SaleServiceGroup[] {
+  const groups = new Map<string, Transaction[]>();
+
+  transactions
+    .filter((transaction) => transaction.type === "income")
+    .forEach((transaction) => {
+      const key = transaction.serviceId ?? transaction.serviceName ?? "unknown-service";
+      groups.set(key, [...(groups.get(key) ?? []), transaction]);
+    });
+
+  return [...groups.entries()].map(([key, groupTransactions]) => {
+    const sortedTransactions = [...groupTransactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const transactionsWithCost = sortedTransactions.filter((transaction) => typeof transaction.costAtTime === "number");
+
+    return {
+      key,
+      serviceName: sortedTransactions[0]?.serviceName ?? "Servicio sin nombre",
+      transactions: sortedTransactions,
+      count: sortedTransactions.length,
+      total: sortedTransactions.reduce((total, transaction) => total + transaction.amount, 0),
+      profit: transactionsWithCost.length
+        ? transactionsWithCost.reduce((total, transaction) => total + transaction.amount - (transaction.costAtTime ?? 0), 0)
+        : null,
+      latestDate: sortedTransactions[0]?.date ?? new Date().toISOString(),
+    };
+  });
+}
+
 function matchesDateFilter(transaction: Transaction, filter: DateFilter) {
   if (filter === "all") {
     return true;
@@ -390,6 +479,18 @@ function sortTransactions(a: Transaction, b: Transaction, sortMode: SortMode) {
   }
 
   return new Date(b.date).getTime() - new Date(a.date).getTime();
+}
+
+function sortSaleGroups(a: SaleServiceGroup, b: SaleServiceGroup, sortMode: SortMode) {
+  if (sortMode === "highest") {
+    return b.total - a.total;
+  }
+
+  if (sortMode === "lowest") {
+    return a.total - b.total;
+  }
+
+  return new Date(b.latestDate).getTime() - new Date(a.latestDate).getTime();
 }
 
 function getSaleProfit(transaction: Transaction) {

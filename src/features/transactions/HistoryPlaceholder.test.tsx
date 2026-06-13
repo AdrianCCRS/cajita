@@ -41,12 +41,20 @@ describe("HistoryPlaceholder", () => {
     spaDataMock.mockReturnValue({
       transactions: [
         transaction({
-          id: "income-today",
+          id: "income-today-1",
           type: "income",
           amount: 35000,
           date: "2026-06-11",
           serviceName: "Manicura tradicional",
           costAtTime: 9000,
+        }),
+        transaction({
+          id: "income-today-2",
+          type: "income",
+          amount: 45000,
+          date: "2026-06-11",
+          serviceName: "Manicura tradicional",
+          costAtTime: 12000,
         }),
         transaction({
           id: "expense-today",
@@ -74,9 +82,11 @@ describe("HistoryPlaceholder", () => {
     expect(screen.getAllByText("Hoy").length).toBeGreaterThan(0);
     expect(screen.getByText("09 jun 2026")).toBeTruthy();
     expect(screen.getByText("Manicura tradicional")).toBeTruthy();
-    expect(screen.getByText("Ganancia $ 26.000")).toBeTruthy();
+    expect(screen.getByText("Venta agrupada · 2 ventas")).toBeTruthy();
+    expect(screen.getByText("$ 80.000")).toBeTruthy();
+    expect(screen.getByText("Ganancia $ 59.000")).toBeTruthy();
     expect(screen.getByText("Insumos")).toBeTruthy();
-    expect(screen.getByText("2 movimientos")).toBeTruthy();
+    expect(screen.getAllByText("1 movimientos").length).toBeGreaterThan(0);
   });
 
   it("filtra por tipo sin mostrar movimientos de otros tipos", async () => {
@@ -86,6 +96,7 @@ describe("HistoryPlaceholder", () => {
     await user.click(screen.getByText("Ventas"));
 
     expect(screen.getByText("Manicura tradicional")).toBeTruthy();
+    expect(screen.getByText("Venta agrupada · 2 ventas")).toBeTruthy();
     expect(screen.queryByText("Insumos")).toBeNull();
     expect(screen.queryByText("Salario de la dueña")).toBeNull();
   });
@@ -96,9 +107,22 @@ describe("HistoryPlaceholder", () => {
 
     expect(screen.queryByText("Eliminar movimiento")).toBeNull();
 
-    await user.click(screen.getByText("Manicura tradicional"));
+    await user.click(screen.getByText("Insumos"));
 
     expect(screen.getByText("Detalle del movimiento")).toBeTruthy();
     expect(screen.getByText("Eliminar movimiento")).toBeTruthy();
+  });
+
+  it("abre detalle agrupado de ventas sin mostrar accion de eliminar", async () => {
+    const user = userEvent.setup();
+    render(<HistoryPlaceholder />);
+
+    await user.click(screen.getByText("Manicura tradicional"));
+
+    expect(screen.getByText("Ventas agrupadas")).toBeTruthy();
+    expect(screen.getByText("Total vendido")).toBeTruthy();
+    expect(screen.getByText("Cantidad de ventas")).toBeTruthy();
+    expect(screen.getByText("Ganancia real")).toBeTruthy();
+    expect(screen.queryByText("Eliminar movimiento")).toBeNull();
   });
 });
