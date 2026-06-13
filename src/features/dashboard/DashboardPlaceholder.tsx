@@ -19,9 +19,13 @@ import {
   getEstimatedProfit,
   getMonthlyExpenses,
   getMonthlyIncome,
+  getMonthlyPersonalVouchers,
   getMonthlyWithdrawals,
   getNetProfit,
+  getOwnerTotalReceived,
   getOwnerSalaryPending,
+  getSalaryUsagePercentage,
+  groupPersonalVouchersByCategory,
 } from "../../shared/utils/financials";
 import { DailyIncomeTrendChart } from "./DailyIncomeTrendChart";
 import { DashboardChartCard } from "./DashboardChartCard";
@@ -87,6 +91,8 @@ export function DashboardPlaceholder() {
   const monthlyIncome = getMonthlyIncome(transactions, year, month);
   const monthlyExpenses = getMonthlyExpenses(transactions, year, month);
   const monthlyWithdrawals = getMonthlyWithdrawals(transactions, year, month);
+  const monthlyPersonalVouchers = getMonthlyPersonalVouchers(transactions, year, month);
+  const ownerTotalReceived = getOwnerTotalReceived(monthlyWithdrawals, monthlyPersonalVouchers);
   const todayIncome = transactions
     .filter((transaction) => transaction.type === "income" && isToday(transaction.date))
     .reduce((total, transaction) => total + transaction.amount, 0);
@@ -97,14 +103,18 @@ export function DashboardPlaceholder() {
   const historicalIncome = getTotalByType(transactions, "income");
   const historicalExpenses = getTotalByType(transactions, "expense");
   const historicalWithdrawals = getTotalByType(transactions, "withdrawal");
+  const historicalPersonalVouchers = getTotalByType(transactions, "personal_voucher");
   const historicalBusinessMoney = historicalIncome - historicalExpenses;
-  const historicalProfit = historicalBusinessMoney - historicalWithdrawals;
+  const historicalProfit = historicalBusinessMoney - historicalWithdrawals - historicalPersonalVouchers;
   const estimatedProfit = getEstimatedProfit(monthlyIncome, monthlyExpenses);
-  const netProfit = getNetProfit(monthlyIncome, monthlyExpenses, monthlyWithdrawals);
-  const salaryPending = getOwnerSalaryPending(financialSettings.salaryTarget, monthlyWithdrawals);
+  const netProfit = getNetProfit(monthlyIncome, monthlyExpenses, monthlyWithdrawals, monthlyPersonalVouchers);
+  const salaryPending = getOwnerSalaryPending(financialSettings.salaryTarget, monthlyWithdrawals, monthlyPersonalVouchers);
   const breakEven = getBreakEvenPoint(fixedExpenses, transactions);
   const breakEvenProgress = breakEven ? getBreakEvenProgress(monthlyIncome, breakEven) : 0;
-  const salaryProgress = financialSettings.salaryTarget ? (monthlyWithdrawals / financialSettings.salaryTarget) * 100 : 0;
+  const salaryProgress = getSalaryUsagePercentage(financialSettings.salaryTarget, ownerTotalReceived);
+  const topPersonalVoucherCategory = groupPersonalVouchersByCategory(
+    transactions.filter((transaction) => transaction.type === "personal_voucher" && isInCurrentMonth(transaction.date, year, month)),
+  )[0];
   const weeklyChartData = getWeeklyIncomeExpenseChartData(transactions, year, month);
   const dailyIncomeData = getDailyIncomeChartData(transactions, year, month);
   const categoryExpenseData = getExpensesByCategoryChartData(transactions, year, month);
@@ -121,6 +131,7 @@ export function DashboardPlaceholder() {
     historicalProfit,
     monthlyExpenses,
     monthlyIncome,
+    monthlyPersonalVouchers,
     monthlyWithdrawals,
     netProfit,
     todayBusinessMoney,
@@ -196,7 +207,7 @@ export function DashboardPlaceholder() {
             <Card className="ui-card wide-card">
               <Card.Content>
                 <div className="section-heading">
-                  <div>
+                  <div className="section-subheading">
                     <span>Meta mínima para no perder plata</span>
                     <strong>{breakEven ? formatCurrency(breakEven) : "Sin datos suficientes"}</strong>
                   </div>
@@ -218,18 +229,67 @@ export function DashboardPlaceholder() {
             <Card className="ui-card wide-card">
               <Card.Content>
                 <div className="section-heading">
-                  <div>
-                    <span>Avance de mi salario</span>
+                  <div className="section-subheading">
+                    <span>Salario de la dueña</span>
                     <strong>
-                      {formatCurrency(monthlyWithdrawals)} de {formatCurrency(financialSettings.salaryTarget)}
+                      {formatCurrency(ownerTotalReceived)} de {formatCurrency(financialSettings.salaryTarget)}
                     </strong>
                   </div>
                   <b>{Math.round(salaryProgress)}%</b>
                 </div>
-                <ProgressBar aria-label="Avance de salario" color="warning" value={Math.min(salaryProgress, 100)} />
-                <Button variant="ghost" onPress={() => openRegister("withdrawal")}>
-                  Registrar pago
-                </Button>
+                <ProgressBar aria-label="Avance de salario" color={salaryPending < 0 ? "warning" : "success"} value={Math.min(salaryProgress, 100)} />
+                <div className="summary-metrics salary-metrics">
+                  <div>
+                    <span>Pagos que ya te hiciste</span>
+                    <b>{formatCurrency(monthlyWithdrawals)}</b>
+                  </div>
+                  <div>
+                    <span>Vales personales</span>
+                    <b>{formatCurrency(monthlyPersonalVouchers)}</b>
+                  </div>
+                  <div>
+                    <span>Total tomado del salario</span>
+                    <b>{formatCurrency(ownerTotalReceived)}</b>
+                  </div>
+                  <div>
+                    <span>{salaryPending < 0 ? "Excedente sobre tu salario" : "Pendiente por pagarte"}</span>
+                    <b>{formatCurrency(Math.abs(salaryPending))}</b>
+                  </div>
+                </div>
+                <p>
+                  {salaryPending < 0
+                    ? `Te pasaste de tu salario objetivo por ${formatCurrency(Math.abs(salaryPending))}.`
+                    : `Te faltan ${formatCurrency(salaryPending)} para completar tu salario objetivo.`}
+                </p>
+                <div className="flex gap-2">
+                  <Button className="btn-withdrawal" variant="ghost" onPress={() => openRegister("withdrawal")}>
+                    Registrar pago
+                  </Button>
+                  <Button className="btn-voucher" variant="ghost" onPress={() => openRegister("personal_voucher")}>
+                    Registrar vale
+                  </Button>
+                </div>
+              </Card.Content>
+            </Card>
+            <Card className="ui-card wide-card">
+              <Card.Content>
+                <div className="section-heading">
+                  <div className="section-subheading">
+                    <span>Vales personales</span>
+                    <strong>{formatCurrency(monthlyPersonalVouchers)}</strong>
+                  </div>
+                </div>
+                <p>
+                  Este mes llevas {formatCurrency(monthlyPersonalVouchers)} en vales personales.
+                  {financialSettings.salaryTarget
+                    ? ` Eso equivale al ${Math.round(getSalaryUsagePercentage(financialSettings.salaryTarget, monthlyPersonalVouchers))}% de tu salario objetivo.`
+                    : ""}
+                </p>
+                <p>
+                  {topPersonalVoucherCategory
+                    ? `Categoría con más vales: ${topPersonalVoucherCategory.personalCategoryName}.`
+                    : "Registra un vale para ver tus gastos personales por categoría."}
+                </p>
               </Card.Content>
             </Card>
             <ExpensesByCategoryChart data={categoryExpenseData} />
@@ -300,6 +360,7 @@ function getDashboardSummary({
   historicalProfit,
   monthlyExpenses,
   monthlyIncome,
+  monthlyPersonalVouchers,
   monthlyWithdrawals,
   netProfit,
   todayBusinessMoney,
@@ -314,6 +375,7 @@ function getDashboardSummary({
   historicalProfit: number;
   monthlyExpenses: number;
   monthlyIncome: number;
+  monthlyPersonalVouchers: number;
   monthlyWithdrawals: number;
   netProfit: number;
   todayBusinessMoney: number;
@@ -352,8 +414,8 @@ function getDashboardSummary({
     metrics: [
       { label: "Ventas", value: formatCurrency(monthlyIncome) },
       { label: "Gastos", value: formatCurrency(monthlyExpenses) },
-      { label: "Salario", value: formatCurrency(monthlyWithdrawals) },
-      { label: "Negocio", value: formatCurrency(estimatedProfit) },
+        { label: "Salario", value: formatCurrency(monthlyWithdrawals + monthlyPersonalVouchers) },
+        { label: "Negocio", value: formatCurrency(estimatedProfit) },
     ],
   };
 }
@@ -362,4 +424,9 @@ function getTotalByType(transactions: Transaction[], type: TransactionType) {
   return transactions
     .filter((transaction) => transaction.type === type)
     .reduce((total, transaction) => total + transaction.amount, 0);
+}
+
+function isInCurrentMonth(date: string, year: number, month: number) {
+  const parsed = new Date(date);
+  return parsed.getFullYear() === year && parsed.getMonth() + 1 === month;
 }

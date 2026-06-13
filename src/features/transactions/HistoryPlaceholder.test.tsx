@@ -70,6 +70,15 @@ describe("HistoryPlaceholder", () => {
           date: "2026-06-09",
           categoryName: "Salario de la dueña",
         }),
+        transaction({
+          id: "voucher-today",
+          type: "personal_voucher",
+          amount: 10000,
+          date: "2026-06-11",
+          personalCategoryId: "pec_alimentacion",
+          personalCategoryName: "Alimentación",
+          notes: "Almuerzo",
+        }),
       ],
       deleteTransaction: vi.fn(),
       restoreTransaction: vi.fn(),
@@ -86,6 +95,8 @@ describe("HistoryPlaceholder", () => {
     expect(screen.getByText("$ 80.000")).toBeTruthy();
     expect(screen.getByText("Ganancia $ 59.000")).toBeTruthy();
     expect(screen.getByText("Insumos")).toBeTruthy();
+    expect(screen.getByText("Alimentación")).toBeTruthy();
+    expect(screen.getByText("Vales $ 10.000")).toBeTruthy();
     expect(screen.getAllByText("1 movimientos").length).toBeGreaterThan(0);
   });
 
@@ -99,6 +110,19 @@ describe("HistoryPlaceholder", () => {
     expect(screen.getByText("Venta agrupada · 2 ventas")).toBeTruthy();
     expect(screen.queryByText("Insumos")).toBeNull();
     expect(screen.queryByText("Salario de la dueña")).toBeNull();
+    expect(screen.queryByText("Alimentación")).toBeNull();
+  });
+
+  it("filtra vales personales sin mezclarlos con gastos", async () => {
+    const user = userEvent.setup();
+    render(<HistoryPlaceholder />);
+
+    await user.click(screen.getByText("Vales"));
+
+    expect(screen.getByText("Alimentación")).toBeTruthy();
+    expect(screen.getByText("Vale personal · Efectivo")).toBeTruthy();
+    expect(screen.queryByText("Insumos")).toBeNull();
+    expect(screen.queryByText("Manicura tradicional")).toBeNull();
   });
 
   it("muestra eliminar solo dentro del detalle del movimiento", async () => {

@@ -66,6 +66,14 @@ export function categoryDoc(db: Firestore, userId: string, categoryId: string) {
   return doc(categoriesCollection(db, userId), categoryId);
 }
 
+export function personalExpenseCategoriesCollection(db: Firestore, userId: string) {
+  return collection(businessDoc(db, userId), "personalExpenseCategories");
+}
+
+export function personalExpenseCategoryDoc(db: Firestore, userId: string, categoryId: string) {
+  return doc(personalExpenseCategoriesCollection(db, userId), categoryId);
+}
+
 export function financialSettingsDoc(db: Firestore, userId: string) {
   return doc(businessDoc(db, userId), "financialSettings", "main");
 }

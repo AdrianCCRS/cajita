@@ -1,5 +1,5 @@
-import { addDoc, serverTimestamp, type Firestore } from "firebase/firestore";
-import { transactionsCollection } from "../../../shared/lib/firestorePaths";
+import { addDoc, serverTimestamp, setDoc, type Firestore } from "firebase/firestore";
+import { transactionDoc, transactionsCollection } from "../../../shared/lib/firestorePaths";
 import type { ExpenseType, PaymentMethod, ServiceMaterial, Transaction } from "../../../shared/types/domain";
 
 const paymentMethods: PaymentMethod[] = ["cash", "transfer", "other"];
@@ -29,6 +29,15 @@ type RegisterExpenseInput = BaseTransactionInput & {
 };
 
 type RegisterWithdrawalInput = BaseTransactionInput;
+
+type RegisterPersonalVoucherInput = BaseTransactionInput & {
+  personalCategoryId: string;
+  personalCategoryName: string;
+};
+
+type EditPersonalVoucherInput = RegisterPersonalVoucherInput & {
+  transactionId: string;
+};
 
 export async function registerIncome(input: RegisterIncomeInput): Promise<Transaction> {
   validateBase(input);
@@ -121,6 +130,74 @@ export async function registerWithdrawal(input: RegisterWithdrawalInput): Promis
   const documentRef = await addDoc(transactionsCollection(input.db, input.uid), data);
 
   return { id: documentRef.id, ...data };
+}
+
+export async function registerPersonalVoucher(input: RegisterPersonalVoucherInput): Promise<Transaction> {
+  validateBase(input);
+
+  if (!input.personalCategoryId.trim() || !input.personalCategoryName.trim()) {
+    throw new Error("Elige una categoría personal para registrar el vale.");
+  }
+
+  const data = {
+    type: "personal_voucher" as const,
+    amount: input.amount,
+    date: input.date,
+    serviceId: null,
+    serviceName: null,
+    priceAtTime: null,
+    costAtTime: null,
+    categoryId: null,
+    categoryName: null,
+    personalCategoryId: input.personalCategoryId,
+    personalCategoryName: input.personalCategoryName,
+    expenseType: null,
+    paymentMethod: input.paymentMethod,
+    notes: input.notes ?? "",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+  const documentRef = await addDoc(transactionsCollection(input.db, input.uid), data);
+
+  return { id: documentRef.id, ...data };
+}
+
+export async function editPersonalVoucher(input: EditPersonalVoucherInput): Promise<Transaction> {
+  if (!input.transactionId.trim()) {
+    throw new Error("No se pudo editar el vale porque falta el movimiento.");
+  }
+
+  validateBase(input);
+
+  if (!input.personalCategoryId.trim() || !input.personalCategoryName.trim()) {
+    throw new Error("Elige una categoría personal para registrar el vale.");
+  }
+
+  const data = {
+    type: "personal_voucher" as const,
+    amount: input.amount,
+    date: input.date,
+    serviceId: null,
+    serviceName: null,
+    priceAtTime: null,
+    costAtTime: null,
+    categoryId: null,
+    categoryName: null,
+    personalCategoryId: input.personalCategoryId,
+    personalCategoryName: input.personalCategoryName,
+    expenseType: null,
+    paymentMethod: input.paymentMethod,
+    notes: input.notes ?? "",
+    updatedAt: serverTimestamp(),
+  };
+
+  await setDoc(transactionDoc(input.db, input.uid, input.transactionId), data, { merge: true });
+
+  return {
+    id: input.transactionId,
+    ...data,
+    createdAt: "",
+  };
 }
 
 function validateBase(input: BaseTransactionInput) {

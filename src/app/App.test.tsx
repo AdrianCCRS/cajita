@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 import { App } from "./App";
 
 describe("App", () => {
-  it("renders Spa Control", async () => {
+  it("renders Cajita", async () => {
     render(<App />);
 
-    expect(await screen.findByText("Spa Control")).toBeTruthy();
+    expect(await screen.findByText("Cajita")).toBeTruthy();
   });
 });

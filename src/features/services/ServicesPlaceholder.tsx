@@ -690,7 +690,7 @@ export function ServicesPlaceholder() {
 
                 <section className="service-material-section" aria-labelledby="associated-materials-title">
                   <div className="section-heading">
-                    <div>
+                    <div className="section-subheading">
                       <span>{currentServiceMaterials.length} asociados</span>
                       <strong id="associated-materials-title">Insumos del servicio</strong>
                     </div>
@@ -719,7 +719,7 @@ export function ServicesPlaceholder() {
             {serviceMaterialsSheetMode === "add" ? (
               <section className="service-material-section service-material-add" aria-labelledby="add-material-title">
                 <div className="section-heading">
-                  <div>
+                  <div className="section-subheading">
                     <span>Nuevo cálculo</span>
                     <strong id="add-material-title">Agregar insumo</strong>
                   </div>

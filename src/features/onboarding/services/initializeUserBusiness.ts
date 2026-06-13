@@ -1,7 +1,7 @@
 import { getDoc, serverTimestamp, writeBatch, type Firestore } from "firebase/firestore";
-import { defaultBusinessId, businessDoc, categoryDoc, financialSettingsDoc, fixedExpenseDoc, serviceDoc, userDoc } from "../../../shared/lib/firestorePaths";
-import type { ExpenseCategory, FixedExpense, Service } from "../../../shared/types/domain";
-import { defaultCategories, defaultFixedExpenses, defaultServices } from "../constants/defaultSeeds";
+import { defaultBusinessId, businessDoc, categoryDoc, financialSettingsDoc, fixedExpenseDoc, personalExpenseCategoryDoc, serviceDoc, userDoc } from "../../../shared/lib/firestorePaths";
+import type { ExpenseCategory, FixedExpense, PersonalExpenseCategory, Service } from "../../../shared/types/domain";
+import { defaultCategories, defaultFixedExpenses, defaultPersonalExpenseCategories, defaultServices } from "../constants/defaultSeeds";
 
 type InitializeUserBusinessInput = {
   db: Firestore;
@@ -13,11 +13,13 @@ type InitializeUserBusinessInput = {
   services?: ServiceSeedInput[];
   fixedExpenses?: FixedExpenseSeedInput[];
   categories?: CategorySeedInput[];
+  personalExpenseCategories?: PersonalExpenseCategorySeedInput[];
 };
 
 type ServiceSeedInput = Pick<Service, "id" | "name" | "defaultPrice" | "estimatedCost" | "isActive">;
 type FixedExpenseSeedInput = Pick<FixedExpense, "id" | "name" | "amount" | "isActive">;
 type CategorySeedInput = Pick<ExpenseCategory, "id" | "name" | "color" | "isActive">;
+type PersonalExpenseCategorySeedInput = Pick<PersonalExpenseCategory, "id" | "name" | "color" | "isActive">;
 
 type InitializeUserBusinessResult = {
   success: true;
@@ -55,6 +57,7 @@ export async function initializeUserBusiness(
   const timestamp = serverTimestamp();
   const batch = writeBatch(input.db);
   const categories = input.categories?.length ? input.categories : defaultCategories;
+  const personalExpenseCategories = input.personalExpenseCategories?.length ? input.personalExpenseCategories : defaultPersonalExpenseCategories;
   const services = input.services?.length ? input.services : defaultServices;
   const fixedExpenses = input.fixedExpenses?.length ? input.fixedExpenses : defaultFixedExpenses;
 
@@ -95,6 +98,20 @@ export async function initializeUserBusiness(
   categories.forEach((category) => {
     batch.set(
       categoryDoc(input.db, uid, category.id),
+      {
+        name: category.name.trim(),
+        color: category.color,
+        isActive: category.isActive,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      },
+      { merge: true },
+    );
+  });
+
+  personalExpenseCategories.forEach((category) => {
+    batch.set(
+      personalExpenseCategoryDoc(input.db, uid, category.id),
       {
         name: category.name.trim(),
         color: category.color,

@@ -107,7 +107,7 @@ export function TopServicesChart({ data, metric }: TopServicesChartProps) {
     <Card className="ui-card wide-card dashboard-chart-card">
       <Card.Content>
         <div className="section-heading">
-          <div>
+          <div className="section-subheading">
             <span>{chartSubtitle}</span>
             <strong>{chartTitle}</strong>
           </div>

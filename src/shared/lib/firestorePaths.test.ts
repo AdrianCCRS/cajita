@@ -53,6 +53,8 @@ import {
   financialSettingsDoc,
   fixedExpenseDoc,
   fixedExpensesCollection,
+  personalExpenseCategoriesCollection,
+  personalExpenseCategoryDoc,
   rawMaterialDoc,
   rawMaterialPriceHistoryCollection,
   rawMaterialPriceHistoryDoc,
@@ -167,6 +169,18 @@ describe("firestorePaths", () => {
   it("categoryDoc construye la ruta correcta con id", () => {
     const ref = categoryDoc(db, uid, "cat_insumos");
     expect(ref.path).toBe("users/user-abc-123/businesses/main/categories/cat_insumos");
+    expect(ref.type).toBe("document");
+  });
+
+  it("personalExpenseCategoriesCollection construye la ruta correcta", () => {
+    const ref = personalExpenseCategoriesCollection(db, uid);
+    expect(ref.path).toBe("users/user-abc-123/businesses/main/personalExpenseCategories");
+    expect(ref.type).toBe("collection");
+  });
+
+  it("personalExpenseCategoryDoc construye la ruta correcta con id", () => {
+    const ref = personalExpenseCategoryDoc(db, uid, "pec_alimentacion");
+    expect(ref.path).toBe("users/user-abc-123/businesses/main/personalExpenseCategories/pec_alimentacion");
     expect(ref.type).toBe("document");
   });
 

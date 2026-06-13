@@ -19,6 +19,10 @@ export function getMonthlyWithdrawals(transactions: Transaction[], year: number,
   return monthlyTotal(transactions, year, month, "withdrawal");
 }
 
+export function getMonthlyPersonalVouchers(transactions: Transaction[], year: number, month: number): number {
+  return monthlyTotal(transactions, year, month, "personal_voucher");
+}
+
 export function getTotalFixedExpenses(fixedExpenses: FixedExpense[]): number {
   return fixedExpenses
     .filter((expense) => expense.isActive)
@@ -69,12 +73,48 @@ export function getNetProfit(
   monthlyIncome: number,
   monthlyExpenses: number,
   monthlyWithdrawals: number,
+  monthlyPersonalVouchers = 0,
 ): number {
-  return monthlyIncome - monthlyExpenses - monthlyWithdrawals;
+  return monthlyIncome - monthlyExpenses - monthlyWithdrawals - monthlyPersonalVouchers;
 }
 
-export function getOwnerSalaryPending(salaryTarget: number, monthlyWithdrawals: number): number {
-  return salaryTarget - monthlyWithdrawals;
+export function getOwnerSalaryPending(salaryTarget: number, monthlyWithdrawals: number, monthlyPersonalVouchers = 0): number {
+  return salaryTarget - monthlyWithdrawals - monthlyPersonalVouchers;
+}
+
+export function getOwnerTotalReceived(monthlyWithdrawals: number, monthlyPersonalVouchers: number): number {
+  return monthlyWithdrawals + monthlyPersonalVouchers;
+}
+
+export function getSalaryUsagePercentage(salaryTarget: number, ownerTotalReceived: number): number {
+  if (salaryTarget <= 0) {
+    return 0;
+  }
+
+  return (ownerTotalReceived / salaryTarget) * 100;
+}
+
+export function getPersonalVouchersByPeriod(transactions: Transaction[], year: number, month: number): Transaction[] {
+  return transactions.filter((transaction) => transaction.type === "personal_voucher" && isInMonth(transaction.date, year, month));
+}
+
+export function groupPersonalVouchersByCategory(
+  transactions: Transaction[],
+): { personalCategoryId: string; personalCategoryName: string; total: number }[] {
+  const categories = new Map<string, { personalCategoryId: string; personalCategoryName: string; total: number }>();
+
+  transactions
+    .filter((transaction) => transaction.type === "personal_voucher" && transaction.personalCategoryId && transaction.personalCategoryName)
+    .forEach((transaction) => {
+      const current = categories.get(transaction.personalCategoryId!) ?? {
+        personalCategoryId: transaction.personalCategoryId!,
+        personalCategoryName: transaction.personalCategoryName!,
+        total: 0,
+      };
+      categories.set(transaction.personalCategoryId!, { ...current, total: current.total + transaction.amount });
+    });
+
+  return [...categories.values()].sort((a, b) => b.total - a.total);
 }
 
 export function getDailySuggestedGoal(breakEven: number, workingDaysInMonth: number): number {

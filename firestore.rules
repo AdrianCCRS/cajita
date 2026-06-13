@@ -23,7 +23,7 @@ service cloud.firestore {
     }
 
     function validTransactionType(value) {
-      return value in ['income', 'expense', 'withdrawal'];
+      return value in ['income', 'expense', 'withdrawal', 'personal_voucher'];
     }
 
     function validExpenseType(value) {
@@ -77,6 +77,17 @@ service cloud.firestore {
         && isPositiveNumber(data.amount)
         && data.date is string
         && validPaymentMethod(data.paymentMethod)
+        && (data.type != 'personal_voucher' || (
+          data.categoryId == null
+          && data.categoryName == null
+          && isNonEmptyString(data.personalCategoryId)
+          && isNonEmptyString(data.personalCategoryName)
+          && data.serviceId == null
+          && data.serviceName == null
+          && data.priceAtTime == null
+          && data.costAtTime == null
+          && data.expenseType == null
+        ))
         && (!('expenseType' in data) || data.expenseType == null || validExpenseType(data.expenseType));
     }
 
@@ -133,6 +144,12 @@ service cloud.firestore {
         && data.isActive is bool;
     }
 
+    function validPersonalExpenseCategory(data) {
+      return isNonEmptyString(data.name)
+        && isNonEmptyString(data.color)
+        && data.isActive is bool;
+    }
+
     function validFinancialSettings(data) {
       return isZeroOrPositiveNumber(data.salaryTarget);
     }
@@ -186,6 +203,12 @@ service cloud.firestore {
         match /categories/{categoryId} {
           allow read: if signedInAs(userId);
           allow create, update: if signedInAs(userId) && validCategory(request.resource.data);
+          allow delete: if signedInAs(userId);
+        }
+
+        match /personalExpenseCategories/{categoryId} {
+          allow read: if signedInAs(userId);
+          allow create, update: if signedInAs(userId) && validPersonalExpenseCategory(request.resource.data);
           allow delete: if signedInAs(userId);
         }
 

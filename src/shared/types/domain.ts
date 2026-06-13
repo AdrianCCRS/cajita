@@ -1,4 +1,4 @@
-export type TransactionType = "income" | "expense" | "withdrawal";
+export type TransactionType = "income" | "expense" | "withdrawal" | "personal_voucher";
 
 export type PaymentMethod = "cash" | "transfer" | "other";
 
@@ -101,6 +101,15 @@ export type ExpenseCategory = {
   updatedAt?: unknown;
 };
 
+export type PersonalExpenseCategory = {
+  id: string;
+  name: string;
+  color: string;
+  isActive: boolean;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+};
+
 export type FinancialSettings = {
   salaryTarget: number;
   createdAt?: unknown;
@@ -123,6 +132,8 @@ export type Transaction = {
   materialsSnapshot?: Array<Pick<ServiceMaterial, "rawMaterialId" | "rawMaterialName" | "servicesCovered" | "quantityUsed" | "unitType" | "unitCostSnapshot" | "totalCost">>;
   categoryId?: string | null;
   categoryName?: string | null;
+  personalCategoryId?: string | null;
+  personalCategoryName?: string | null;
   expenseType?: ExpenseType | null;
 };
 

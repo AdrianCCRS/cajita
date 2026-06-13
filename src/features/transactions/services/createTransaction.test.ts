@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Firestore } from "firebase/firestore";
-import { registerExpense, registerIncome, registerWithdrawal } from "./createTransaction";
+import { editPersonalVoucher, registerExpense, registerIncome, registerPersonalVoucher, registerWithdrawal } from "./createTransaction";
 
-const { addDocMock, timestamp } = vi.hoisted(() => ({
+const { addDocMock, setDocMock, timestamp } = vi.hoisted(() => ({
   addDocMock: vi.fn(),
+  setDocMock: vi.fn(),
   timestamp: { kind: "serverTimestamp" },
 }));
 
@@ -21,6 +22,7 @@ vi.mock("firebase/firestore", () => {
 
   return {
     addDoc: addDocMock,
+    setDoc: setDocMock,
     serverTimestamp: vi.fn(() => timestamp),
     collection: vi.fn((parent: unknown, path: string) => {
       const parentPath = (parent as { path?: string })?.path ?? "";
@@ -51,7 +53,9 @@ const baseValidInput = {
 
 beforeEach(() => {
   addDocMock.mockReset();
+  setDocMock.mockReset();
   addDocMock.mockResolvedValue({ id: "tx-001" });
+  setDocMock.mockResolvedValue(undefined);
 });
 
 describe("registerIncome", () => {
@@ -291,5 +295,109 @@ describe("registerWithdrawal", () => {
     await expect(
       registerWithdrawal({ ...baseValidInput, uid: "" }),
     ).rejects.toThrow("No se pudo registrar el movimiento porque falta el usuario.");
+  });
+});
+
+describe("registerPersonalVoucher", () => {
+  it("guarda un vale personal separado de gastos del negocio", async () => {
+    const transaction = await registerPersonalVoucher({
+      ...baseValidInput,
+      amount: 10000,
+      personalCategoryId: "pec_alimentacion",
+      personalCategoryName: "Alimentación",
+      notes: "Almuerzo",
+    });
+
+    expect(addDocMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: "users/user-abc-123/businesses/main/transactions",
+      }),
+      expect.objectContaining({
+        type: "personal_voucher",
+        amount: 10000,
+        serviceId: null,
+        serviceName: null,
+        priceAtTime: null,
+        costAtTime: null,
+        categoryId: null,
+        categoryName: null,
+        personalCategoryId: "pec_alimentacion",
+        personalCategoryName: "Alimentación",
+        expenseType: null,
+        paymentMethod: "cash",
+        notes: "Almuerzo",
+      }),
+    );
+    expect(transaction).toEqual(expect.objectContaining({
+      id: "tx-001",
+      type: "personal_voucher",
+      personalCategoryName: "Alimentación",
+    }));
+  });
+
+  it("lanza error si el monto es cero", async () => {
+    await expect(
+      registerPersonalVoucher({
+        ...baseValidInput,
+        amount: 0,
+        personalCategoryId: "pec_alimentacion",
+        personalCategoryName: "Alimentación",
+      }),
+    ).rejects.toThrow("El valor debe ser mayor a $0");
+  });
+
+  it("lanza error si falta categoria personal", async () => {
+    await expect(
+      registerPersonalVoucher({
+        ...baseValidInput,
+        personalCategoryId: "",
+        personalCategoryName: "Alimentación",
+      }),
+    ).rejects.toThrow("Elige una categoría personal para registrar el vale.");
+  });
+});
+
+describe("editPersonalVoucher", () => {
+  it("edita un vale personal manteniendo el tipo y separacion de gastos", async () => {
+    const transaction = await editPersonalVoucher({
+      ...baseValidInput,
+      transactionId: "tx-voucher",
+      amount: 22000,
+      personalCategoryId: "pec_salud",
+      personalCategoryName: "Salud",
+      notes: "Medicina",
+    });
+
+    expect(setDocMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: "users/user-abc-123/businesses/main/transactions/tx-voucher",
+      }),
+      expect.objectContaining({
+        type: "personal_voucher",
+        amount: 22000,
+        categoryId: null,
+        categoryName: null,
+        personalCategoryId: "pec_salud",
+        personalCategoryName: "Salud",
+        expenseType: null,
+      }),
+      { merge: true },
+    );
+    expect(transaction).toEqual(expect.objectContaining({
+      id: "tx-voucher",
+      type: "personal_voucher",
+      personalCategoryName: "Salud",
+    }));
+  });
+
+  it("lanza error si falta transactionId", async () => {
+    await expect(
+      editPersonalVoucher({
+        ...baseValidInput,
+        transactionId: "",
+        personalCategoryId: "pec_salud",
+        personalCategoryName: "Salud",
+      }),
+    ).rejects.toThrow("No se pudo editar el vale porque falta el movimiento.");
   });
 });

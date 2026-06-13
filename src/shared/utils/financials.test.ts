@@ -6,9 +6,13 @@ import {
   getExpensesByCategory,
   getMonthlyExpenses,
   getMonthlyIncome,
+  getMonthlyPersonalVouchers,
   getMonthlyWithdrawals,
   getNetProfit,
+  getOwnerTotalReceived,
   getOwnerSalaryPending,
+  getSalaryUsagePercentage,
+  groupPersonalVouchersByCategory,
   getServiceMargin,
   getTopServiceByRevenue,
   getTopServiceBySales,
@@ -62,6 +66,17 @@ const transactions: Transaction[] = [
     amount: 20000,
     date: "2026-06-10",
   },
+  {
+    ...baseTransaction,
+    id: "voucher-1",
+    type: "personal_voucher",
+    amount: 12000,
+    date: "2026-06-10",
+    personalCategoryId: "pec_alimentacion",
+    personalCategoryName: "Alimentación",
+    categoryId: null,
+    categoryName: null,
+  },
 ];
 
 const fixedExpenses: FixedExpense[] = [
@@ -80,8 +95,9 @@ describe("financials", () => {
     expect(getMonthlyIncome(transactions, 2026, 6)).toBe(85000);
     expect(getMonthlyExpenses(transactions, 2026, 6)).toBe(15000);
     expect(getMonthlyWithdrawals(transactions, 2026, 6)).toBe(20000);
+    expect(getMonthlyPersonalVouchers(transactions, 2026, 6)).toBe(12000);
     expect(getEstimatedProfit(85000, 15000)).toBe(70000);
-    expect(getNetProfit(85000, 15000, 20000)).toBe(50000);
+    expect(getNetProfit(85000, 15000, 20000, 12000)).toBe(38000);
   });
 
   it("calculates break even only when sales have price and cost snapshots", () => {
@@ -101,12 +117,18 @@ describe("financials", () => {
       updatedAt: "2026-06-10T12:00:00.000Z",
     };
 
-    expect(getOwnerSalaryPending(100000, 20000)).toBe(80000);
+    expect(getOwnerTotalReceived(20000, 12000)).toBe(32000);
+    expect(getOwnerSalaryPending(100000, 20000, 12000)).toBe(68000);
+    expect(getOwnerSalaryPending(25000, 20000, 12000)).toBe(-7000);
+    expect(Math.round(getSalaryUsagePercentage(100000, 32000))).toBe(32);
     expect(Math.round(getServiceMargin(service))).toBe(74);
     expect(getTopServiceBySales(transactions)?.serviceName).toBe("Manicura");
     expect(getTopServiceByRevenue(transactions)?.serviceName).toBe("Cepillado");
     expect(getExpensesByCategory(transactions)).toEqual([
       { categoryId: "category-1", categoryName: "Insumos", total: 15000 },
+    ]);
+    expect(groupPersonalVouchersByCategory(transactions)).toEqual([
+      { personalCategoryId: "pec_alimentacion", personalCategoryName: "Alimentación", total: 12000 },
     ]);
   });
 });

@@ -76,6 +76,7 @@ describe("SpaDataContext — modo local", () => {
     expect(state.services.length).toBe(4);
     expect(state.services[0].name).toBe("Manicura tradicional");
     expect(state.categories.length).toBe(9);
+    expect(state.personalExpenseCategories.length).toBe(7);
     expect(state.fixedExpenses.length).toBe(3);
     expect(state.transactions).toEqual([]);
     expect(state.financialSettings.salaryTarget).toBe(1800000);
@@ -188,6 +189,34 @@ describe("SpaDataContext — modo local", () => {
     expect(transaction!.categoryId).toBeNull();
     expect(transaction!.categoryName).toBe("Salario de la dueña");
     expect(transaction!.notes).toBe("Salario semana 1");
+  });
+
+  it("registra un vale personal separado de gastos del negocio", async () => {
+    const { ref } = renderWithProviders();
+
+    await waitFor(() => {
+      expect(ref.current).toBeTruthy();
+    });
+
+    let transaction: Transaction | undefined;
+    await act(async () => {
+      transaction = await ref.current!.addTransaction({
+        type: "personal_voucher",
+        personalCategoryId: "pec_alimentacion",
+        amount: 10000,
+        paymentMethod: "cash",
+        date: "2026-06-10",
+        notes: "Almuerzo",
+      });
+    });
+
+    expect(transaction!.type).toBe("personal_voucher");
+    expect(transaction!.amount).toBe(10000);
+    expect(transaction!.categoryId).toBeNull();
+    expect(transaction!.categoryName).toBeNull();
+    expect(transaction!.personalCategoryId).toBe("pec_alimentacion");
+    expect(transaction!.personalCategoryName).toBe("Alimentación");
+    expect(transaction!.notes).toBe("Almuerzo");
   });
 
   it("lanza error al registrar venta con servicio sin precio", async () => {
@@ -555,17 +584,28 @@ describe("SpaDataContext — modo local", () => {
         notes: "Salario semanal",
       });
     });
+    await act(async () => {
+      await ref.current!.addTransaction({
+        type: "personal_voucher",
+        personalCategoryId: "pec_alimentacion",
+        amount: 10000,
+        paymentMethod: "cash",
+        date: "2026-06-10",
+      });
+    });
 
     const state = ref.current!.getState();
-    expect(state.transactions.length).toBe(4);
+    expect(state.transactions.length).toBe(5);
 
     const incomes = state.transactions.filter((t) => t.type === "income");
     const expenses = state.transactions.filter((t) => t.type === "expense");
     const withdrawals = state.transactions.filter((t) => t.type === "withdrawal");
+    const personalVouchers = state.transactions.filter((t) => t.type === "personal_voucher");
 
     expect(incomes.length).toBe(2);
     expect(expenses.length).toBe(1);
     expect(withdrawals.length).toBe(1);
+    expect(personalVouchers.length).toBe(1);
   });
 
   it("persiste estado en localStorage", async () => {
@@ -614,21 +654,30 @@ describe("SpaDataContext — modo local", () => {
         paymentMethod: "transfer",
         date: "2026-06-10",
       });
+      await ref.current!.addTransaction({
+        type: "personal_voucher",
+        personalCategoryId: "pec_alimentacion",
+        amount: 10000,
+        paymentMethod: "cash",
+        date: "2026-06-10",
+      });
     });
 
     const state = ref.current!.getState();
     const incomes = state.transactions.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
     const expenses = state.transactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
     const withdrawals = state.transactions.filter((t) => t.type === "withdrawal").reduce((sum, t) => sum + t.amount, 0);
+    const personalVouchers = state.transactions.filter((t) => t.type === "personal_voucher").reduce((sum, t) => sum + t.amount, 0);
 
     expect(incomes).toBe(100000);
     expect(expenses).toBe(30000);
     expect(withdrawals).toBe(40000);
+    expect(personalVouchers).toBe(10000);
 
     const negocio = incomes - expenses;
-    const ganancia = incomes - expenses - withdrawals;
+    const ganancia = incomes - expenses - withdrawals - personalVouchers;
 
     expect(negocio).toBe(70000);
-    expect(ganancia).toBe(30000);
+    expect(ganancia).toBe(20000);
   });
 });

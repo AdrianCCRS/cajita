@@ -92,7 +92,7 @@ export function DashboardChartCard({ data, onRegisterIncome }: DashboardChartCar
     <Card className="ui-card wide-card dashboard-chart-card">
       <Card.Content>
         <div className="section-heading">
-          <div>
+          <div className="section-subheading">
             <span>Comparativo semanal</span>
             <strong>Ventas vs gastos del mes</strong>
           </div>

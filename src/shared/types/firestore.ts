@@ -6,6 +6,7 @@ export type {
   FinancialSettings,
   FixedExpense,
   PaymentMethod,
+  PersonalExpenseCategory,
   Service,
   Transaction,
   TransactionType,

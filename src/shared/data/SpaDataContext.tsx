@@ -1,13 +1,14 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   deleteDoc,
+  getDoc,
   onSnapshot,
   setDoc,
   type CollectionReference,
   type DocumentData,
 } from "firebase/firestore";
-import { defaultCategories, defaultFixedExpenses, defaultServices } from "../../features/onboarding/constants/defaultSeeds";
-import { registerExpense, registerIncome, registerWithdrawal } from "../../features/transactions/services/createTransaction";
+import { defaultCategories, defaultFixedExpenses, defaultPersonalExpenseCategories, defaultServices } from "../../features/onboarding/constants/defaultSeeds";
+import { registerExpense, registerIncome, registerPersonalVoucher, registerWithdrawal } from "../../features/transactions/services/createTransaction";
 import { useAuth } from "../auth/AuthContext";
 import {
   businessDoc,
@@ -15,6 +16,8 @@ import {
   financialSettingsDoc,
   fixedExpenseDoc,
   fixedExpensesCollection,
+  personalExpenseCategoriesCollection,
+  personalExpenseCategoryDoc,
   rawMaterialDoc,
   rawMaterialPriceHistoryDoc,
   rawMaterialsCollection,
@@ -33,6 +36,7 @@ import type {
   FinancialSettings,
   FixedExpense,
   PaymentMethod,
+  PersonalExpenseCategory,
   RawMaterial,
   RawMaterialPriceHistory,
   Service,
@@ -62,6 +66,14 @@ type TransactionInput =
     }
   | {
       type: "withdrawal";
+      amount: number;
+      paymentMethod: PaymentMethod;
+      date: string;
+      notes?: string;
+    }
+  | {
+      type: "personal_voucher";
+      personalCategoryId: string;
       amount: number;
       paymentMethod: PaymentMethod;
       date: string;
@@ -108,6 +120,7 @@ type SpaState = {
   rawMaterialPriceHistoryByMaterialId: Record<string, RawMaterialPriceHistory[]>;
   fixedExpenses: FixedExpense[];
   categories: ExpenseCategory[];
+  personalExpenseCategories: PersonalExpenseCategory[];
   transactions: Transaction[];
   financialSettings: FinancialSettings;
 };
@@ -120,6 +133,7 @@ const initialState: SpaState = {
   rawMaterialPriceHistoryByMaterialId: {},
   fixedExpenses: defaultFixedExpenses.map((item) => ({ ...item, createdAt: now, updatedAt: now })),
   categories: defaultCategories.map((item) => ({ ...item, createdAt: now, updatedAt: now })),
+  personalExpenseCategories: defaultPersonalExpenseCategories.map((item) => ({ ...item, createdAt: now, updatedAt: now })),
   transactions: [],
   financialSettings: { salaryTarget: 1800000, updatedAt: now },
 };
@@ -190,6 +204,8 @@ function buildTransaction(input: TransactionInput, state: SpaState): Transaction
       materialsSnapshot,
       categoryId: null,
       categoryName: null,
+      personalCategoryId: null,
+      personalCategoryName: null,
       expenseType: null,
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -212,15 +228,41 @@ function buildTransaction(input: TransactionInput, state: SpaState): Transaction
       costAtTime: null,
       categoryId: selectedCategory?.id ?? input.categoryId,
       categoryName: selectedCategory?.name ?? "Otros",
+      personalCategoryId: null,
+      personalCategoryName: null,
       expenseType: input.expenseType,
       createdAt: timestamp,
       updatedAt: timestamp,
     };
   }
 
+  if (input.type === "withdrawal") {
+    return {
+      id: createId("transaction"),
+      type: "withdrawal",
+      amount: input.amount,
+      date: input.date,
+      paymentMethod: input.paymentMethod,
+      notes: input.notes,
+      serviceId: null,
+      serviceName: null,
+      priceAtTime: null,
+      costAtTime: null,
+      categoryId: null,
+      categoryName: "Salario de la dueña",
+      personalCategoryId: null,
+      personalCategoryName: null,
+      expenseType: null,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+  }
+
+  const selectedPersonalCategory = state.personalExpenseCategories.find((item) => item.id === input.personalCategoryId);
+
   return {
     id: createId("transaction"),
-    type: "withdrawal",
+    type: "personal_voucher",
     amount: input.amount,
     date: input.date,
     paymentMethod: input.paymentMethod,
@@ -230,7 +272,9 @@ function buildTransaction(input: TransactionInput, state: SpaState): Transaction
     priceAtTime: null,
     costAtTime: null,
     categoryId: null,
-    categoryName: "Salario de la dueña",
+    categoryName: null,
+    personalCategoryId: selectedPersonalCategory?.id ?? input.personalCategoryId,
+    personalCategoryName: selectedPersonalCategory?.name ?? "Otros",
     expenseType: null,
     createdAt: timestamp,
     updatedAt: timestamp,
@@ -295,6 +339,12 @@ export function SpaDataProvider({ children }: { children: ReactNode }) {
         docsWithId<ExpenseCategory>(categoriesCollection(db, user.uid), (categories) => {
           setState((current) => ({ ...current, categories }));
         }),
+        docsWithId<PersonalExpenseCategory>(personalExpenseCategoriesCollection(db, user.uid), (personalExpenseCategories) => {
+          setState((current) => ({
+            ...current,
+            personalExpenseCategories: personalExpenseCategories.length ? personalExpenseCategories : initialState.personalExpenseCategories,
+          }));
+        }),
         docsWithId<Transaction>(transactionsCollection(db, user.uid), (transactions) => {
           setState((current) => ({ ...current, transactions }));
         }),
@@ -344,6 +394,31 @@ export function SpaDataProvider({ children }: { children: ReactNode }) {
       unsubscribers.forEach((unsubscribe) => unsubscribe());
     };
   }, [db, state.services, useFirestore, user]);
+
+  useEffect(() => {
+    if (!useFirestore || !db || !user) {
+      return;
+    }
+
+    void Promise.all(
+      defaultPersonalExpenseCategories.map(async (category) => {
+        const categoryRef = personalExpenseCategoryDoc(db, user.uid, category.id);
+        const snapshot = await getDoc(categoryRef);
+        if (snapshot.exists()) {
+          return;
+        }
+
+        const timestamp = new Date().toISOString();
+        await setDoc(categoryRef, {
+          name: category.name,
+          color: category.color,
+          isActive: category.isActive,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        }, { merge: true });
+      }),
+    );
+  }, [db, useFirestore, user]);
 
   function commitLocal(updater: (current: SpaState) => SpaState) {
     setState((current) => {
@@ -400,11 +475,26 @@ export function SpaDataProvider({ children }: { children: ReactNode }) {
             });
           }
 
-          return registerWithdrawal({
+          if (input.type === "withdrawal") {
+            return registerWithdrawal({
+              db,
+              uid: user.uid,
+              amount: input.amount,
+              date: input.date,
+              paymentMethod: input.paymentMethod,
+              notes: input.notes,
+            });
+          }
+
+          const selectedPersonalCategory = state.personalExpenseCategories.find((item) => item.id === input.personalCategoryId);
+
+          return registerPersonalVoucher({
             db,
             uid: user.uid,
             amount: input.amount,
             date: input.date,
+            personalCategoryId: selectedPersonalCategory?.id ?? input.personalCategoryId,
+            personalCategoryName: selectedPersonalCategory?.name ?? "Otros",
             paymentMethod: input.paymentMethod,
             notes: input.notes,
           });

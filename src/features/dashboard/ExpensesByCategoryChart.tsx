@@ -96,7 +96,7 @@ export function ExpensesByCategoryChart({ data }: ExpensesByCategoryChartProps) 
     <Card className="ui-card wide-card dashboard-chart-card">
       <Card.Content>
         <div className="section-heading">
-          <div>
+          <div className="section-subheading">
             <span>¿En qué se fue la plata?</span>
             <strong>Gastos por categoría</strong>
           </div>

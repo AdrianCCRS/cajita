@@ -96,7 +96,7 @@ export function DailyIncomeTrendChart({ data }: DailyIncomeTrendChartProps) {
     <Card className="ui-card wide-card dashboard-chart-card">
       <Card.Content>
         <div className="section-heading">
-          <div>
+          <div className="section-subheading">
             <span>Día a día del mes</span>
             <strong>Tendencia de ventas diarias</strong>
           </div>

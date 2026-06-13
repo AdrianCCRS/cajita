@@ -64,7 +64,7 @@ export function LoginScreen() {
       <Card className="auth-panel ui-card" aria-labelledby="login-title">
         <Card.Content>
           <p className="eyebrow">Control financiero</p>
-          <h1 id="login-title">Spa Control</h1>
+          <h1 id="login-title">Cajita</h1>
           <p>{mode === "login" ? "Entra para ver cómo va tu negocio hoy." : "Crea tu cuenta privada para empezar."}</p>
 
           <form className="form-stack" onSubmit={handleSubmit}>

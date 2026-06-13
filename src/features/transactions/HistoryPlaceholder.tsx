@@ -1,5 +1,5 @@
 import { Search, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type KeyboardEvent } from "react";
 import { useOutletContext } from "react-router-dom";
 import { BottomSheet, Button, Card, ConfirmDialog, EmptyState, Input, Label, ScreenHero, TextField } from "../../shared/components/ui";
 import { useSpaData } from "../../shared/data/SpaDataContext";
@@ -12,6 +12,7 @@ const filters: Array<{ id: TransactionType | "all"; label: string }> = [
   { id: "income", label: "Ventas" },
   { id: "expense", label: "Gastos" },
   { id: "withdrawal", label: "Pagarme" },
+  { id: "personal_voucher", label: "Vales" },
 ];
 
 type DateFilter = "today" | "month" | "lastMonth" | "all";
@@ -146,7 +147,14 @@ export function HistoryPlaceholder() {
 
               <div className="list-stack history-list">
                 {saleGroups.map((group) => (
-                  <Card className="ui-card list-row movement-row row--income" key={group.key} onClick={() => setSelectedSaleGroup(group)} role="button" tabIndex={0}>
+                  <Card
+                    className="ui-card list-row movement-row row--income"
+                    key={group.key}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedSaleGroup(group)}
+                    onKeyDown={(event) => activateOnKeyboard(event, () => setSelectedSaleGroup(group))}
+                  >
                     <Card.Content>
                       <div>
                         <span>Venta agrupada · {group.count} {group.count === 1 ? "venta" : "ventas"}</span>
@@ -176,6 +184,7 @@ export function HistoryPlaceholder() {
                 <div className="history-day__totals" aria-label={`Resumen de ${group.title}`}>
                   {group.expenses ? <span>Gastos {formatCurrency(group.expenses)}</span> : null}
                   {group.withdrawals ? <span>Pagarme {formatCurrency(group.withdrawals)}</span> : null}
+                  {group.personalVouchers ? <span>Vales {formatCurrency(group.personalVouchers)}</span> : null}
                 </div>
               </div>
 
@@ -184,7 +193,14 @@ export function HistoryPlaceholder() {
                   const saleProfit = getSaleProfit(transaction);
 
                   return (
-                    <Card className={`ui-card list-row movement-row row--${transaction.type}`} key={transaction.id} onClick={() => setSelectedTransaction(transaction)} role="button" tabIndex={0}>
+                    <Card
+                      className={`ui-card list-row movement-row row--${transaction.type}`}
+                      key={transaction.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setSelectedTransaction(transaction)}
+                      onKeyDown={(event) => activateOnKeyboard(event, () => setSelectedTransaction(transaction))}
+                    >
                       <Card.Content>
                         <div>
                           <span>{getTransactionLabel(transaction.type)} · {getPaymentLabel(transaction.paymentMethod)}</span>
@@ -224,6 +240,7 @@ export function HistoryPlaceholder() {
             <DetailItem label="Método" value={getPaymentLabel(selectedTransaction.paymentMethod)} />
             {selectedTransaction.serviceName ? <DetailItem label="Servicio" value={selectedTransaction.serviceName} /> : null}
             {selectedTransaction.categoryName ? <DetailItem label="Categoría" value={selectedTransaction.categoryName} /> : null}
+            {selectedTransaction.personalCategoryName ? <DetailItem label="Categoría personal" value={selectedTransaction.personalCategoryName} /> : null}
             {selectedTransaction.notes ? <DetailItem label="Nota" value={selectedTransaction.notes} /> : null}
             <Button variant="danger" onPress={() => setPendingDelete(selectedTransaction)}>
               <Trash2 aria-hidden="true" size={18} />
@@ -247,7 +264,9 @@ export function HistoryPlaceholder() {
       {pendingDelete ? (
         <ConfirmDialog
           isOpen
-          message={`¿Segura que quieres eliminar este movimiento de ${formatCurrency(pendingDelete.amount)}?`}
+          message={pendingDelete.type === "personal_voucher"
+            ? "¿Eliminar este vale personal? Esto cambiará el saldo pendiente de tu salario."
+            : `¿Segura que quieres eliminar este movimiento de ${formatCurrency(pendingDelete.amount)}?`}
           title="Eliminar movimiento"
           onCancel={() => setPendingDelete(null)}
           onConfirm={() => void confirmDelete()}
@@ -273,7 +292,7 @@ function FilterGroup({
       {items.map((item) => (
         <Button
           key={item.id}
-          className={selectedId === item.id && item.id === "expense" ? "segmented--expense" : selectedId === item.id && item.id === "withdrawal" ? "segmented--withdrawal" : ""}
+          className={selectedId === item.id && item.id === "expense" ? "segmented--expense" : selectedId === item.id && item.id === "withdrawal" ? "segmented--withdrawal" : selectedId === item.id && item.id === "personal_voucher" ? "segmented--voucher" : ""}
           size="sm"
           variant={selectedId === item.id ? "primary" : "tertiary"}
           onPress={() => onSelect(item.id)}
@@ -283,6 +302,15 @@ function FilterGroup({
       ))}
     </div>
   );
+}
+
+function activateOnKeyboard(event: KeyboardEvent, action: () => void) {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  event.preventDefault();
+  action();
 }
 
 function HistoryEmptyState({
@@ -325,7 +353,7 @@ function HistoryEmptyState({
   }
 
   if (filter !== "all") {
-    const typeLabel = filter === "income" ? "ventas" : filter === "expense" ? "gastos" : "pagos";
+    const typeLabel = filter === "income" ? "ventas" : filter === "expense" ? "gastos" : filter === "personal_voucher" ? "vales" : "pagos";
     return (
       <EmptyState
         actionLabel="Ver todos"
@@ -366,6 +394,7 @@ function getDateFilterLabel(dateFilter: DateFilter) {
 function getTypeSingular(type: TransactionType) {
   if (type === "income") return "ventas";
   if (type === "expense") return "gastos";
+  if (type === "personal_voucher") return "vales";
   return "pagos";
 }
 
@@ -394,6 +423,7 @@ function groupTransactions(transactions: Transaction[]) {
     income: totalByType(groupTransactions, "income"),
     expenses: totalByType(groupTransactions, "expense"),
     withdrawals: totalByType(groupTransactions, "withdrawal"),
+    personalVouchers: totalByType(groupTransactions, "personal_voucher"),
     transactions: groupTransactions,
   }));
 }
@@ -455,6 +485,7 @@ function matchesSearch(transaction: Transaction, search: string) {
     transaction.notes,
     transaction.serviceName,
     transaction.categoryName,
+    transaction.personalCategoryName,
     getTransactionLabel(transaction.type),
     getPaymentLabel(transaction.paymentMethod),
     formatDateShort(transaction.date),
@@ -522,12 +553,16 @@ function getDateGroupTitle(dateKey: string) {
 }
 
 function getTransactionTitle(transaction: Transaction) {
-  return transaction.serviceName ?? transaction.categoryName ?? transaction.notes ?? "Movimiento";
+  return transaction.serviceName ?? transaction.categoryName ?? transaction.personalCategoryName ?? transaction.notes ?? "Movimiento";
 }
 
 function getTransactionDetail(transaction: Transaction) {
   if (transaction.type === "withdrawal") {
     return "Pago a la dueña";
+  }
+
+  if (transaction.type === "personal_voucher") {
+    return transaction.notes || "Se descuenta de tu salario del mes.";
   }
 
   return formatDateShort(transaction.date);
@@ -539,6 +574,9 @@ function getTransactionLabel(type: TransactionType) {
   }
   if (type === "expense") {
     return "Gasto";
+  }
+  if (type === "personal_voucher") {
+    return "Vale personal";
   }
   return "Pagarme";
 }

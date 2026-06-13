@@ -1,15 +1,15 @@
-import { Banknote, CircleDollarSign, Home, ListChecks, Receipt, Scissors, Settings, UserRound, X } from "lucide-react";
+import { Banknote, CircleDollarSign, HandCoins, Home, ListChecks, Package, Receipt, Scissors, Settings, UserRound, X } from "lucide-react";
 import { useMemo, useState, type FormEvent, type Key } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../shared/auth/AuthContext";
 import { defaultTransactionDate, useSpaData } from "../shared/data/SpaDataContext";
 import type { ExpenseType, PaymentMethod, Transaction, TransactionType } from "../shared/types/domain";
 import { formatCurrency } from "../shared/utils/formatCurrency";
-import { getEstimatedProfit, getMonthlyExpenses, getMonthlyIncome, getMonthlyWithdrawals } from "../shared/utils/financials";
+import { getEstimatedProfit, getMonthlyExpenses, getMonthlyIncome, getMonthlyPersonalVouchers, getMonthlyWithdrawals } from "../shared/utils/financials";
 import { transactionSchema } from "../shared/validation/schemas";
-import { BottomSheet, Button, Card, Chip, Label, MoneyField, SkeletonCard, TextArea, TextField, ToastRegion } from "../shared/components/ui";
-import {Dropdown, Avatar} from "@heroui/react";
-import {ArrowRightFromSquare} from "@gravity-ui/icons";
+import { BottomSheet, Button, Card, Label, MoneyField, SkeletonCard, TextArea, TextField, ToastRegion } from "../shared/components/ui";
+import { Avatar, Dropdown } from "@heroui/react";
+import { ArrowRightFromSquare } from "@gravity-ui/icons";
 
 const navItems = [
   { id: "inicio", to: "/", label: "Inicio", icon: Home },
@@ -31,7 +31,7 @@ export function AppShell() {
   const [toast, setToast] = useState<Toast | null>(null);
   const navigate = useNavigate();
   const { isFirebaseEnabled, signOut, user } = useAuth();
-  const { business, source, isLoading, error } = useSpaData();
+  const { business, isLoading, error } = useSpaData();
 
   function openRegister(type: TransactionType) {
     setInitialType(type);
@@ -59,8 +59,8 @@ export function AppShell() {
     <div className="app-shell">
       <header className="app-header">
         <div>
-          <p className="eyebrow">{business.name}</p>
-          <h1>Spa Control</h1>
+          <p className="eyebrow flex items-center gap-1"><Package className="size-3.5" />Cajita</p>
+          <h1>{business.name}</h1>
         </div>
         <div className="header-actions">
           {isFirebaseEnabled ? (
@@ -164,10 +164,9 @@ function QuickActionFab({ onSelect }: { onSelect: (type: TransactionType) => voi
 
   return (
     <div className="fab-cluster">
-      {isExpanded ? (
-        <div className="fab-menu" aria-label="Acciones rápidas">
-          <Button onPress={() => choose("income")}>
-            <Banknote aria-hidden="true" size={18} />
+      <div className={`fab-menu${isExpanded ? " fab-menu--expanded" : ""}`} aria-hidden={!isExpanded} aria-label="Acciones rápidas">
+        <Button onPress={() => choose("income")}>
+          <Banknote aria-hidden="true" size={18} />
             Venta
           </Button>
           <Button variant="secondary" className="btn-expense" onPress={() => choose("expense")}>
@@ -178,13 +177,15 @@ function QuickActionFab({ onSelect }: { onSelect: (type: TransactionType) => voi
             <UserRound aria-hidden="true" size={18} />
             Pagarme
           </Button>
+          <Button variant="secondary" className="btn-voucher" onPress={() => choose("personal_voucher")}>
+            <HandCoins aria-hidden="true" size={18} />
+            Vale
+          </Button>
         </div>
-      ) : null}
       <Button
         isIconOnly
         aria-label={isExpanded ? "Cerrar acciones rápidas" : "Registrar movimiento"}
-        className="quick-action"
-       
+        className={`quick-action${isExpanded ? " quick-action--active" : ""}`}
         onPress={() => setIsExpanded((current) => !current)}
       >
         {isExpanded ? <X aria-hidden="true" size={26} /> : <CircleDollarSign aria-hidden="true" size={26} />}
@@ -202,12 +203,14 @@ function RegisterMovementSheet({
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
-  const { services, categories, transactions, financialSettings, addTransaction } = useSpaData();
+  const { services, categories, personalExpenseCategories, transactions, financialSettings, addTransaction } = useSpaData();
   const activeServices = services.filter((service) => service.isActive);
   const activeCategories = categories.filter((category) => category.isActive);
+  const activePersonalCategories = personalExpenseCategories.filter((category) => category.isActive);
   const [type, setType] = useState<TransactionType>(initialType);
   const [serviceId, setServiceId] = useState(activeServices[0]?.id ?? "");
   const [categoryId, setCategoryId] = useState(activeCategories[0]?.id ?? "");
+  const [personalCategoryId, setPersonalCategoryId] = useState(activePersonalCategories[0]?.id ?? "");
   const selectedService = activeServices.find((service) => service.id === serviceId);
   const [amount, setAmount] = useState<number | undefined>(initialType === "income" ? selectedService?.defaultPrice : undefined);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
@@ -224,7 +227,8 @@ function RegisterMovementSheet({
     const income = getMonthlyIncome(transactions, year, month);
     const expenses = getMonthlyExpenses(transactions, year, month);
     const withdrawals = getMonthlyWithdrawals(transactions, year, month);
-    return { available: getEstimatedProfit(income, expenses), withdrawals };
+    const personalVouchers = getMonthlyPersonalVouchers(transactions, year, month);
+    return { available: getEstimatedProfit(income, expenses), withdrawals, personalVouchers };
   }, [transactions]);
 
   function changeType(nextType: TransactionType) {
@@ -265,6 +269,11 @@ function RegisterMovementSheet({
       return;
     }
 
+    if (type === "personal_voucher" && !personalCategoryId) {
+      setError("Elige una categoría personal para el vale.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       const transaction =
@@ -272,9 +281,11 @@ function RegisterMovementSheet({
           ? await addTransaction({ type, serviceId, amount: numericAmount, paymentMethod, date, notes })
           : type === "expense"
             ? await addTransaction({ type, categoryId, amount: numericAmount, expenseType, paymentMethod, date, notes })
-            : await addTransaction({ type, amount: numericAmount, paymentMethod, date, notes });
+            : type === "withdrawal"
+              ? await addTransaction({ type, amount: numericAmount, paymentMethod, date, notes })
+              : await addTransaction({ type, personalCategoryId, amount: numericAmount, paymentMethod, date, notes });
 
-      onSaved(buildSuccessMessage(transaction, monthly.withdrawals));
+      onSaved(buildSuccessMessage(transaction, monthly.withdrawals, monthly.personalVouchers));
       onClose();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Algo salió mal. Intenta de nuevo en un momento.");
@@ -296,13 +307,20 @@ function RegisterMovementSheet({
             Gasto
           </Button>
           <Button
-            
             variant={type === "withdrawal" ? "primary" : "tertiary"}
             className={type === "withdrawal" ? "segmented--withdrawal" : ""}
             onPress={() => changeType("withdrawal")}
           >
             <UserRound aria-hidden="true" size={16} />
             Pagarme
+          </Button>
+          <Button
+            variant={type === "personal_voucher" ? "primary" : "tertiary"}
+            className={type === "personal_voucher" ? "segmented--voucher" : ""}
+            onPress={() => changeType("personal_voucher")}
+          >
+            <HandCoins aria-hidden="true" size={16} />
+            Vale
           </Button>
         </div>
 
@@ -317,6 +335,19 @@ function RegisterMovementSheet({
             label="Servicio"
             selectedId={serviceId}
             onSelect={changeService}
+          />
+        ) : null}
+
+        {type === "personal_voucher" ? (
+          <OptionGroup
+            emptyText="No hay categorías personales disponibles."
+            items={activePersonalCategories.map((category) => ({
+              id: category.id,
+              label: category.name,
+            }))}
+            label="Categoría personal"
+            selectedId={personalCategoryId}
+            onSelect={setPersonalCategoryId}
           />
         ) : null}
 
@@ -391,6 +422,11 @@ function RegisterMovementSheet({
             Meta mensual: {formatCurrency(financialSettings.salaryTarget)}. Pagado este mes: {formatCurrency(monthly.withdrawals)}.
           </p>
         ) : null}
+        {type === "personal_voucher" ? (
+          <p className="hint-text">
+            Este valor se descuenta de tu salario del mes. No se cuenta como gasto del negocio.
+          </p>
+        ) : null}
         {error ? <p className="error-text">{error}</p> : null}
 
         <Button isPending={isSubmitting} type="submit">
@@ -424,7 +460,6 @@ function OptionGroup({
               aria-pressed={selectedId === item.id}
               className="choice-chip"
               key={item.id}
-             
               size="sm"
               variant={selectedId === item.id ? "primary" : "tertiary"}
               onPress={() => onSelect(item.id)}
@@ -441,7 +476,7 @@ function OptionGroup({
   );
 }
 
-function buildSuccessMessage(transaction: Transaction, previousWithdrawals: number) {
+function buildSuccessMessage(transaction: Transaction, previousWithdrawals: number, previousPersonalVouchers: number) {
   if (transaction.type === "income") {
     return `¡Listo! ${transaction.serviceName} por ${formatCurrency(transaction.amount)} quedó registrada.`;
   }
@@ -450,8 +485,12 @@ function buildSuccessMessage(transaction: Transaction, previousWithdrawals: numb
     return `Gasto de ${formatCurrency(transaction.amount)} en ${transaction.categoryName} registrado.`;
   }
 
+  if (transaction.type === "personal_voucher") {
+    return `Vale de ${formatCurrency(transaction.amount)} en ${transaction.personalCategoryName} registrado. Se descuenta de tu salario.`;
+  }
+
   return `¡Te pagaste ${formatCurrency(transaction.amount)}! Ya llevas ${formatCurrency(
-    previousWithdrawals + transaction.amount,
+    previousWithdrawals + previousPersonalVouchers + transaction.amount,
   )} de tu meta mensual.`;
 }
 

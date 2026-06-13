@@ -109,7 +109,7 @@ function LoadingScreen({ message }: { message: string }) {
       <Card className="auth-panel ui-card">
         <Card.Content>
           <p className="eyebrow">Control financiero</p>
-          <h1>Spa Control</h1>
+          <h1>Cajita</h1>
           <p>{message}</p>
         </Card.Content>
       </Card>
