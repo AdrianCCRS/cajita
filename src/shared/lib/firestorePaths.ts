@@ -18,6 +18,30 @@ export function serviceDoc(db: Firestore, userId: string, serviceId: string) {
   return doc(servicesCollection(db, userId), serviceId);
 }
 
+export function serviceMaterialsCollection(db: Firestore, userId: string, serviceId: string) {
+  return collection(serviceDoc(db, userId, serviceId), "materials");
+}
+
+export function serviceMaterialDoc(db: Firestore, userId: string, serviceId: string, materialId: string) {
+  return doc(serviceMaterialsCollection(db, userId, serviceId), materialId);
+}
+
+export function rawMaterialsCollection(db: Firestore, userId: string) {
+  return collection(businessDoc(db, userId), "rawMaterials");
+}
+
+export function rawMaterialDoc(db: Firestore, userId: string, rawMaterialId: string) {
+  return doc(rawMaterialsCollection(db, userId), rawMaterialId);
+}
+
+export function rawMaterialPriceHistoryCollection(db: Firestore, userId: string, rawMaterialId: string) {
+  return collection(rawMaterialDoc(db, userId, rawMaterialId), "priceHistory");
+}
+
+export function rawMaterialPriceHistoryDoc(db: Firestore, userId: string, rawMaterialId: string, historyId: string) {
+  return doc(rawMaterialPriceHistoryCollection(db, userId, rawMaterialId), historyId);
+}
+
 export function transactionsCollection(db: Firestore, userId: string) {
   return collection(businessDoc(db, userId), "transactions");
 }

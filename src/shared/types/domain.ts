@@ -4,6 +4,14 @@ export type PaymentMethod = "cash" | "transfer" | "other";
 
 export type ExpenseType = "fixed" | "variable" | "extraordinary";
 
+export type MeasurementType = "volume" | "weight" | "unit";
+
+export type PurchaseUnit = "ml" | "l" | "g" | "kg" | "unit";
+
+export type BaseUnit = "ml" | "g" | "unit";
+
+export type CostCalculationMode = "automatic" | "manual";
+
 export type UserProfile = {
   id: string;
   email: string | null;
@@ -27,9 +35,52 @@ export type Service = {
   name: string;
   defaultPrice: number;
   estimatedCost: number;
+  costCalculationMode?: CostCalculationMode;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+};
+
+export type RawMaterial = {
+  id: string;
+  name: string;
+  measurementType: MeasurementType;
+  purchaseQuantity: number;
+  purchaseUnit: PurchaseUnit;
+  baseQuantity: number;
+  baseUnit: BaseUnit;
+  purchasePrice: number;
+  unitCost: number;
+  stockQuantity: number;
+  minimumStock?: number | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ServiceMaterial = {
+  id: string;
+  rawMaterialId: string;
+  rawMaterialName: string;
+  servicesCovered: number;
+  quantityUsed: number;
+  unitType: BaseUnit;
+  unitCostSnapshot: number;
+  totalCost: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type RawMaterialPriceHistory = {
+  id: string;
+  previousPurchasePrice: number;
+  newPurchasePrice: number;
+  previousUnitCost: number;
+  newUnitCost: number;
+  previousBaseQuantity: number;
+  newBaseQuantity: number;
+  reason?: string;
+  changedAt: string;
 };
 
 export type FixedExpense = {
@@ -69,6 +120,7 @@ export type Transaction = {
   serviceName?: string | null;
   priceAtTime?: number | null;
   costAtTime?: number | null;
+  materialsSnapshot?: Array<Pick<ServiceMaterial, "rawMaterialId" | "rawMaterialName" | "servicesCovered" | "quantityUsed" | "unitType" | "unitCostSnapshot" | "totalCost">>;
   categoryId?: string | null;
   categoryName?: string | null;
   expenseType?: ExpenseType | null;

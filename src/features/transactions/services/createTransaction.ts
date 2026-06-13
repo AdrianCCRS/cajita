@@ -1,6 +1,6 @@
 import { addDoc, serverTimestamp, type Firestore } from "firebase/firestore";
 import { transactionsCollection } from "../../../shared/lib/firestorePaths";
-import type { ExpenseType, PaymentMethod, Transaction } from "../../../shared/types/domain";
+import type { ExpenseType, PaymentMethod, ServiceMaterial, Transaction } from "../../../shared/types/domain";
 
 const paymentMethods: PaymentMethod[] = ["cash", "transfer", "other"];
 const expenseTypes: ExpenseType[] = ["fixed", "variable", "extraordinary"];
@@ -19,6 +19,7 @@ type RegisterIncomeInput = BaseTransactionInput & {
   serviceName: string;
   priceAtTime: number;
   costAtTime: number;
+  materialsSnapshot?: Array<Pick<ServiceMaterial, "rawMaterialId" | "rawMaterialName" | "servicesCovered" | "quantityUsed" | "unitType" | "unitCostSnapshot" | "totalCost">>;
 };
 
 type RegisterExpenseInput = BaseTransactionInput & {
@@ -52,6 +53,7 @@ export async function registerIncome(input: RegisterIncomeInput): Promise<Transa
     serviceName: input.serviceName,
     priceAtTime: input.priceAtTime,
     costAtTime: input.costAtTime,
+    materialsSnapshot: input.materialsSnapshot ?? [],
     categoryId: null,
     categoryName: null,
     expenseType: null,

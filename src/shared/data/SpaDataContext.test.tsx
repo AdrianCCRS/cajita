@@ -14,6 +14,10 @@ type TestActions = {
   restoreTransaction: ReturnType<typeof useSpaData>["restoreTransaction"];
   upsertService: ReturnType<typeof useSpaData>["upsertService"];
   deactivateService: ReturnType<typeof useSpaData>["deactivateService"];
+  upsertRawMaterial: ReturnType<typeof useSpaData>["upsertRawMaterial"];
+  deleteRawMaterial: ReturnType<typeof useSpaData>["deleteRawMaterial"];
+  upsertServiceMaterial: ReturnType<typeof useSpaData>["upsertServiceMaterial"];
+  deleteServiceMaterial: ReturnType<typeof useSpaData>["deleteServiceMaterial"];
   upsertFixedExpense: ReturnType<typeof useSpaData>["upsertFixedExpense"];
   updateSalaryTarget: ReturnType<typeof useSpaData>["updateSalaryTarget"];
   getState: () => ReturnType<typeof useSpaData>;
@@ -28,6 +32,10 @@ const TestHarness = forwardRef<TestActions, { children?: ReactNode }>(function T
     restoreTransaction: data.restoreTransaction,
     upsertService: data.upsertService,
     deactivateService: data.deactivateService,
+    upsertRawMaterial: data.upsertRawMaterial,
+    deleteRawMaterial: data.deleteRawMaterial,
+    upsertServiceMaterial: data.upsertServiceMaterial,
+    deleteServiceMaterial: data.deleteServiceMaterial,
     upsertFixedExpense: data.upsertFixedExpense,
     updateSalaryTarget: data.updateSalaryTarget,
     getState: () => data,
@@ -322,6 +330,125 @@ describe("SpaDataContext — modo local", () => {
     expect(deactivated).toBeTruthy();
     expect(deactivated!.isActive).toBe(false);
     expect(state.services.length).toBe(4);
+  });
+
+  it("crea un insumo convirtiendo a unidad base", async () => {
+    const { ref } = renderWithProviders();
+
+    await waitFor(() => {
+      expect(ref.current).toBeTruthy();
+    });
+
+    await act(async () => {
+      await ref.current!.upsertRawMaterial({
+        name: "Removedor",
+        measurementType: "volume",
+        purchaseQuantity: 1,
+        purchaseUnit: "l",
+        purchasePrice: 40000,
+      });
+    });
+
+    const material = ref.current!.getState().rawMaterials.find((item) => item.name === "Removedor");
+    expect(material).toBeTruthy();
+    expect(material!.baseQuantity).toBe(1000);
+    expect(material!.baseUnit).toBe("ml");
+    expect(material!.unitCost).toBe(40);
+    expect(material!.stockQuantity).toBe(1000);
+  });
+
+  it("asocia un insumo a un servicio y recalcula el costo estimado", async () => {
+    const { ref } = renderWithProviders();
+
+    await waitFor(() => {
+      expect(ref.current).toBeTruthy();
+    });
+
+    await act(async () => {
+      await ref.current!.upsertRawMaterial({
+        name: "Removedor",
+        measurementType: "volume",
+        purchaseQuantity: 1,
+        purchaseUnit: "l",
+        purchasePrice: 40000,
+      });
+    });
+
+    const material = ref.current!.getState().rawMaterials.find((item) => item.name === "Removedor")!;
+
+    await act(async () => {
+      await ref.current!.upsertServiceMaterial("svc_manicura_tradicional", {
+        rawMaterialId: material.id,
+        servicesCovered: 80,
+      });
+    });
+
+    const state = ref.current!.getState();
+    const updatedService = state.services.find((item) => item.id === "svc_manicura_tradicional")!;
+    expect(updatedService.costCalculationMode).toBe("automatic");
+    expect(updatedService.estimatedCost).toBe(500);
+    expect(state.serviceMaterialsByServiceId.svc_manicura_tradicional[0].servicesCovered).toBe(80);
+    expect(state.serviceMaterialsByServiceId.svc_manicura_tradicional[0].quantityUsed).toBe(12.5);
+    expect(state.serviceMaterialsByServiceId.svc_manicura_tradicional[0].totalCost).toBe(500);
+  });
+
+  it("actualiza costos automaticos y guarda snapshot al vender", async () => {
+    const { ref } = renderWithProviders();
+
+    await waitFor(() => {
+      expect(ref.current).toBeTruthy();
+    });
+
+    await act(async () => {
+      await ref.current!.upsertRawMaterial({
+        name: "Removedor",
+        measurementType: "volume",
+        purchaseQuantity: 1,
+        purchaseUnit: "l",
+        purchasePrice: 40000,
+      });
+    });
+
+    const material = ref.current!.getState().rawMaterials.find((item) => item.name === "Removedor")!;
+
+    await act(async () => {
+      await ref.current!.upsertServiceMaterial("svc_manicura_tradicional", {
+        rawMaterialId: material.id,
+        servicesCovered: 80,
+      });
+    });
+
+    await act(async () => {
+      await ref.current!.upsertRawMaterial({
+        id: material.id,
+        name: "Removedor",
+        measurementType: "volume",
+        purchaseQuantity: 1,
+        purchaseUnit: "l",
+        purchasePrice: 60000,
+      });
+    });
+
+    const updatedService = ref.current!.getState().services.find((item) => item.id === "svc_manicura_tradicional")!;
+    expect(updatedService.estimatedCost).toBe(750);
+
+    let transaction: Transaction | undefined;
+    await act(async () => {
+      transaction = await ref.current!.addTransaction({
+        type: "income",
+        serviceId: "svc_manicura_tradicional",
+        amount: 35000,
+        paymentMethod: "cash" as PaymentMethod,
+        date: "2026-06-10",
+      });
+    });
+
+    expect(transaction!.costAtTime).toBe(750);
+    expect(transaction!.materialsSnapshot?.[0].unitCostSnapshot).toBe(60);
+    expect(transaction!.materialsSnapshot?.[0].servicesCovered).toBe(80);
+    expect(transaction!.materialsSnapshot?.[0].quantityUsed).toBe(12.5);
+    expect(transaction!.materialsSnapshot?.[0].totalCost).toBe(750);
+    expect(ref.current!.getState().rawMaterialPriceHistoryByMaterialId[material.id]).toHaveLength(1);
   });
 
   it("crea un gasto fijo nuevo", async () => {

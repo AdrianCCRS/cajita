@@ -4,8 +4,10 @@ import {
   fixedExpenseSchema,
   onboardingBusinessSchema,
   positiveMoneySchema,
+  rawMaterialSchema,
   salarySchema,
   serviceSchema,
+  serviceMaterialSchema,
   transactionSchema,
 } from "./schemas";
 
@@ -94,6 +96,77 @@ describe("serviceSchema", () => {
   it("acepta costo estimado en cero", () => {
     const result = serviceSchema.safeParse({ name: "Manicura", defaultPrice: 35000, estimatedCost: 0 });
     expect(result.success).toBe(true);
+  });
+
+  it("acepta modo de calculo automatico o manual", () => {
+    expect(serviceSchema.safeParse({
+      name: "Manicura",
+      defaultPrice: 35000,
+      estimatedCost: 0,
+      costCalculationMode: "automatic",
+    }).success).toBe(true);
+    expect(serviceSchema.safeParse({
+      name: "Manicura",
+      defaultPrice: 35000,
+      estimatedCost: 0,
+      costCalculationMode: "other",
+    }).success).toBe(false);
+  });
+});
+
+describe("rawMaterialSchema", () => {
+  it("acepta un insumo valido por volumen", () => {
+    const result = rawMaterialSchema.safeParse({
+      name: "Removedor",
+      measurementType: "volume",
+      purchaseQuantity: 1,
+      purchaseUnit: "l",
+      purchasePrice: 40000,
+      stockQuantity: 1000,
+      minimumStock: 100,
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("rechaza unidades incoherentes", () => {
+    const result = rawMaterialSchema.safeParse({
+      name: "Cera",
+      measurementType: "weight",
+      purchaseQuantity: 1,
+      purchaseUnit: "l",
+      purchasePrice: 80000,
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rechaza precio de compra en cero", () => {
+    const result = rawMaterialSchema.safeParse({
+      name: "Removedor",
+      measurementType: "volume",
+      purchaseQuantity: 1,
+      purchaseUnit: "l",
+      purchasePrice: 0,
+    });
+
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("serviceMaterialSchema", () => {
+  it("acepta asociar un insumo con rendimiento positivo", () => {
+    expect(serviceMaterialSchema.safeParse({
+      rawMaterialId: "raw_removedor",
+      servicesCovered: 80,
+    }).success).toBe(true);
+  });
+
+  it("rechaza rendimiento en cero", () => {
+    expect(serviceMaterialSchema.safeParse({
+      rawMaterialId: "raw_removedor",
+      servicesCovered: 0,
+    }).success).toBe(false);
   });
 });
 

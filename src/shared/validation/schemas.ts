@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getBaseUnit, isPurchaseUnitValidForMeasurement } from "../utils/rawMaterials";
 
 const moneySchema = z.coerce
   .number({ invalid_type_error: "Escribe un valor válido." })
@@ -16,7 +17,39 @@ export const serviceSchema = z.object({
   name: z.string().trim().min(1, "Escribe el nombre del servicio."),
   defaultPrice: positiveMoneySchema,
   estimatedCost: moneySchema,
+  costCalculationMode: z.enum(["automatic", "manual"]).optional(),
 });
+
+export const rawMaterialSchema = z.object({
+  name: z.string().trim().min(1, "Escribe el nombre del insumo."),
+  measurementType: z.enum(["volume", "weight", "unit"], {
+    errorMap: () => ({ message: "Elige cómo se mide el insumo." }),
+  }),
+  purchaseQuantity: positiveMoneySchema,
+  purchaseUnit: z.enum(["ml", "l", "g", "kg", "unit"], {
+    errorMap: () => ({ message: "Elige una unidad válida." }),
+  }),
+  purchasePrice: positiveMoneySchema,
+  stockQuantity: moneySchema.optional(),
+  minimumStock: moneySchema.optional(),
+}).superRefine((data, context) => {
+  if (!isPurchaseUnitValidForMeasurement(data.measurementType, data.purchaseUnit)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "La unidad no coincide con el tipo de insumo.",
+      path: ["purchaseUnit"],
+    });
+  }
+});
+
+export const serviceMaterialSchema = z.object({
+  rawMaterialId: z.string().trim().min(1, "Elige un insumo."),
+  servicesCovered: positiveMoneySchema,
+});
+
+export function getRawMaterialBaseUnit(measurementType: z.infer<typeof rawMaterialSchema>["measurementType"]) {
+  return getBaseUnit(measurementType);
+}
 
 export const fixedExpenseSchema = z.object({
   name: z.string().trim().min(1, "Escribe el nombre del gasto."),

@@ -130,20 +130,27 @@ export function HistoryPlaceholder() {
               </div>
 
               <div className="list-stack history-list">
-                {group.transactions.map((transaction) => (
-                  <Card className={`ui-card list-row movement-row row--${transaction.type}`} key={transaction.id} onClick={() => setSelectedTransaction(transaction)} role="button" tabIndex={0}>
-                    <Card.Content>
-                      <div>
-                        <span>{getTransactionLabel(transaction.type)} · {getPaymentLabel(transaction.paymentMethod)}</span>
-                        <strong>{getTransactionTitle(transaction)}</strong>
-                        <p>{transaction.notes || getTransactionDetail(transaction)}</p>
-                      </div>
-                      <div className="row-actions">
-                        <b>{formatCurrency(transaction.amount)}</b>
-                      </div>
-                    </Card.Content>
-                  </Card>
-                ))}
+                {group.transactions.map((transaction) => {
+                  const saleProfit = getSaleProfit(transaction);
+
+                  return (
+                    <Card className={`ui-card list-row movement-row row--${transaction.type}`} key={transaction.id} onClick={() => setSelectedTransaction(transaction)} role="button" tabIndex={0}>
+                      <Card.Content>
+                        <div>
+                          <span>{getTransactionLabel(transaction.type)} · {getPaymentLabel(transaction.paymentMethod)}</span>
+                          <strong>{getTransactionTitle(transaction)}</strong>
+                          <p>{transaction.notes || getTransactionDetail(transaction)}</p>
+                        </div>
+                        <div className="row-actions">
+                          <b>{formatCurrency(transaction.amount)}</b>
+                          {saleProfit !== null ? (
+                            <span className="movement-profit">Ganancia {formatCurrency(saleProfit)}</span>
+                          ) : null}
+                        </div>
+                      </Card.Content>
+                    </Card>
+                  );
+                })}
               </div>
             </section>
           ))}
@@ -383,6 +390,14 @@ function sortTransactions(a: Transaction, b: Transaction, sortMode: SortMode) {
   }
 
   return new Date(b.date).getTime() - new Date(a.date).getTime();
+}
+
+function getSaleProfit(transaction: Transaction) {
+  if (transaction.type !== "income" || typeof transaction.costAtTime !== "number") {
+    return null;
+  }
+
+  return transaction.amount - transaction.costAtTime;
 }
 
 function totalByType(transactions: Transaction[], type: TransactionType) {

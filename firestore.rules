@@ -30,6 +30,38 @@ service cloud.firestore {
       return value in ['fixed', 'variable', 'extraordinary'];
     }
 
+    function validMeasurementType(value) {
+      return value in ['volume', 'weight', 'unit'];
+    }
+
+    function validPurchaseUnit(value) {
+      return value in ['ml', 'l', 'g', 'kg', 'unit'];
+    }
+
+    function validBaseUnit(value) {
+      return value in ['ml', 'g', 'unit'];
+    }
+
+    function validCostCalculationMode(value) {
+      return value in ['automatic', 'manual'];
+    }
+
+    function validUnitsForMeasurement(data) {
+      return (
+        data.measurementType == 'volume'
+        && data.purchaseUnit in ['ml', 'l']
+        && data.baseUnit == 'ml'
+      ) || (
+        data.measurementType == 'weight'
+        && data.purchaseUnit in ['g', 'kg']
+        && data.baseUnit == 'g'
+      ) || (
+        data.measurementType == 'unit'
+        && data.purchaseUnit == 'unit'
+        && data.baseUnit == 'unit'
+      );
+    }
+
     function validUserProfile(data) {
       return data.currentBusinessId == 'main'
         && data.onboardingCompleted is bool;
@@ -52,7 +84,42 @@ service cloud.firestore {
       return isNonEmptyString(data.name)
         && isPositiveNumber(data.defaultPrice)
         && isZeroOrPositiveNumber(data.estimatedCost)
+        && (!('costCalculationMode' in data) || validCostCalculationMode(data.costCalculationMode))
         && data.isActive is bool;
+    }
+
+    function validRawMaterial(data) {
+      return isNonEmptyString(data.name)
+        && validMeasurementType(data.measurementType)
+        && isPositiveNumber(data.purchaseQuantity)
+        && validPurchaseUnit(data.purchaseUnit)
+        && isPositiveNumber(data.baseQuantity)
+        && validBaseUnit(data.baseUnit)
+        && validUnitsForMeasurement(data)
+        && isPositiveNumber(data.purchasePrice)
+        && isPositiveNumber(data.unitCost)
+        && isZeroOrPositiveNumber(data.stockQuantity)
+        && (!('minimumStock' in data) || data.minimumStock == null || isZeroOrPositiveNumber(data.minimumStock))
+        && data.isActive is bool;
+    }
+
+    function validServiceMaterial(data) {
+      return isNonEmptyString(data.rawMaterialId)
+        && isNonEmptyString(data.rawMaterialName)
+        && isPositiveNumber(data.servicesCovered)
+        && isPositiveNumber(data.quantityUsed)
+        && validBaseUnit(data.unitType)
+        && isZeroOrPositiveNumber(data.unitCostSnapshot)
+        && isZeroOrPositiveNumber(data.totalCost);
+    }
+
+    function validRawMaterialPriceHistory(data) {
+      return isZeroOrPositiveNumber(data.previousPurchasePrice)
+        && isZeroOrPositiveNumber(data.newPurchasePrice)
+        && isZeroOrPositiveNumber(data.previousUnitCost)
+        && isZeroOrPositiveNumber(data.newUnitCost)
+        && isZeroOrPositiveNumber(data.previousBaseQuantity)
+        && isZeroOrPositiveNumber(data.newBaseQuantity);
     }
 
     function validFixedExpense(data) {
@@ -84,6 +151,24 @@ service cloud.firestore {
           allow read: if signedInAs(userId);
           allow create, update: if signedInAs(userId) && validService(request.resource.data);
           allow delete: if signedInAs(userId);
+
+          match /materials/{materialId} {
+            allow read: if signedInAs(userId);
+            allow create, update: if signedInAs(userId) && validServiceMaterial(request.resource.data);
+            allow delete: if signedInAs(userId);
+          }
+        }
+
+        match /rawMaterials/{rawMaterialId} {
+          allow read: if signedInAs(userId);
+          allow create, update: if signedInAs(userId) && validRawMaterial(request.resource.data);
+          allow delete: if signedInAs(userId);
+
+          match /priceHistory/{historyId} {
+            allow read: if signedInAs(userId);
+            allow create: if signedInAs(userId) && validRawMaterialPriceHistory(request.resource.data);
+            allow update, delete: if false;
+          }
         }
 
         match /transactions/{transactionId} {

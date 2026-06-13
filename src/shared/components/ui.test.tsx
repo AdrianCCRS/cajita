@@ -106,6 +106,22 @@ describe("MoneyField", () => {
     );
     expect(screen.getByText("El valor debe ser mayor a $0")).toBeTruthy();
   });
+
+  it("no conserva cero cuando el minimo es mayor a cero", async () => {
+    const user = userEvent.setup();
+
+    function Harness() {
+      const [value, setValue] = useState<number | undefined>();
+      return <MoneyField label="Valor" minValue={1} value={value} onChange={setValue} />;
+    }
+
+    render(<Harness />);
+    const input = screen.getByLabelText("Valor");
+
+    await user.type(input, "0");
+
+    expect(input).toHaveValue("");
+  });
 });
 
 describe("BottomSheet", () => {

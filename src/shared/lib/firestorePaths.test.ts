@@ -53,7 +53,13 @@ import {
   financialSettingsDoc,
   fixedExpenseDoc,
   fixedExpensesCollection,
+  rawMaterialDoc,
+  rawMaterialPriceHistoryCollection,
+  rawMaterialPriceHistoryDoc,
+  rawMaterialsCollection,
   serviceDoc,
+  serviceMaterialDoc,
+  serviceMaterialsCollection,
   servicesCollection,
   transactionDoc,
   transactionsCollection,
@@ -89,6 +95,42 @@ describe("firestorePaths", () => {
   it("serviceDoc construye la ruta correcta con id", () => {
     const ref = serviceDoc(db, uid, "svc_manicura");
     expect(ref.path).toBe("users/user-abc-123/businesses/main/services/svc_manicura");
+    expect(ref.type).toBe("document");
+  });
+
+  it("serviceMaterialsCollection construye la subcoleccion correcta", () => {
+    const ref = serviceMaterialsCollection(db, uid, "svc_manicura");
+    expect(ref.path).toBe("users/user-abc-123/businesses/main/services/svc_manicura/materials");
+    expect(ref.type).toBe("collection");
+  });
+
+  it("serviceMaterialDoc construye la ruta correcta con id", () => {
+    const ref = serviceMaterialDoc(db, uid, "svc_manicura", "raw_removedor");
+    expect(ref.path).toBe("users/user-abc-123/businesses/main/services/svc_manicura/materials/raw_removedor");
+    expect(ref.type).toBe("document");
+  });
+
+  it("rawMaterialsCollection construye la ruta correcta", () => {
+    const ref = rawMaterialsCollection(db, uid);
+    expect(ref.path).toBe("users/user-abc-123/businesses/main/rawMaterials");
+    expect(ref.type).toBe("collection");
+  });
+
+  it("rawMaterialDoc construye la ruta correcta con id", () => {
+    const ref = rawMaterialDoc(db, uid, "raw_removedor");
+    expect(ref.path).toBe("users/user-abc-123/businesses/main/rawMaterials/raw_removedor");
+    expect(ref.type).toBe("document");
+  });
+
+  it("rawMaterialPriceHistoryCollection construye la subcoleccion correcta", () => {
+    const ref = rawMaterialPriceHistoryCollection(db, uid, "raw_removedor");
+    expect(ref.path).toBe("users/user-abc-123/businesses/main/rawMaterials/raw_removedor/priceHistory");
+    expect(ref.type).toBe("collection");
+  });
+
+  it("rawMaterialPriceHistoryDoc construye la ruta correcta con id", () => {
+    const ref = rawMaterialPriceHistoryDoc(db, uid, "raw_removedor", "history-1");
+    expect(ref.path).toBe("users/user-abc-123/businesses/main/rawMaterials/raw_removedor/priceHistory/history-1");
     expect(ref.type).toBe("document");
   });
 

@@ -131,6 +131,7 @@ export function MoneyField({
     >
       <Label>{label}</Label>
       <Input
+        aria-label={label}
         autoComplete="off"
         inputMode="numeric"
         min={minValue}
@@ -143,7 +144,7 @@ export function MoneyField({
         onChange={(e) => {
           const raw = e.target.value.replace(/[^0-9]/g, "");
           const numeric = raw ? Number(raw) : undefined;
-          onChange(numeric);
+          onChange(numeric !== undefined && numeric < minValue ? undefined : numeric);
         }}
       />
       {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}

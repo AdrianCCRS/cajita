@@ -40,6 +40,7 @@ vi.mock("@heroui/react", () => {
     "isOpen",
     "isPending",
     "isRequired",
+    "isRowHeader",
     "onOpenChange",
     "variant",
   ]);
@@ -71,6 +72,18 @@ vi.mock("@heroui/react", () => {
     }
     return Comp;
   };
+  const Button = React.forwardRef<HTMLButtonElement, { children?: React.ReactNode }>(({ children, ...props }, _ref) =>
+    React.createElement("button", { type: "button", ...cleanProps(props), "data-testid": "Button" }, children),
+  );
+  Button.displayName = "Button";
+  const Input = React.forwardRef<HTMLInputElement, { children?: React.ReactNode }>(({ children: _children, ...props }, _ref) =>
+    React.createElement("input", { ...cleanProps(props), "data-testid": "Input" }),
+  );
+  Input.displayName = "Input";
+  const Label = React.forwardRef<HTMLLabelElement, { children?: React.ReactNode }>(({ children, ...props }, _ref) =>
+    React.createElement("label", { ...cleanProps(props), "data-testid": "Label" }, children),
+  );
+  Label.displayName = "Label";
 
   const Card = createMock("Card", {
     Header: createMock("Card.Header"),
@@ -101,17 +114,40 @@ vi.mock("@heroui/react", () => {
     Footer: createMock("Modal.Footer"),
   });
 
+  const Table = createMock("Table", {
+    Body: React.forwardRef<HTMLTableSectionElement, { children?: React.ReactNode }>(({ children, ...props }, _ref) =>
+      React.createElement("tbody", cleanProps(props), children),
+    ),
+    Cell: React.forwardRef<HTMLTableCellElement, { children?: React.ReactNode }>(({ children, ...props }, _ref) =>
+      React.createElement("td", cleanProps(props), children),
+    ),
+    Column: React.forwardRef<HTMLTableCellElement, { children?: React.ReactNode }>(({ children, ...props }, _ref) =>
+      React.createElement("th", { ...cleanProps(props), scope: "col" }, children),
+    ),
+    Content: React.forwardRef<HTMLTableElement, { children?: React.ReactNode }>(({ children, ...props }, _ref) =>
+      React.createElement("table", cleanProps(props), children),
+    ),
+    Header: React.forwardRef<HTMLTableSectionElement, { children?: React.ReactNode }>(({ children, ...props }, _ref) =>
+      React.createElement("thead", cleanProps(props), React.createElement("tr", null, children)),
+    ),
+    Row: React.forwardRef<HTMLTableRowElement, { children?: React.ReactNode }>(({ children, ...props }, _ref) =>
+      React.createElement("tr", cleanProps(props), children),
+    ),
+    ScrollContainer: createMock("Table.ScrollContainer"),
+  });
+
   return {
-    Button: createMock("Button"),
+    Button,
     Card,
     Chip: createMock("Chip"),
     Drawer,
     FieldError: createMock("FieldError"),
-    Input: createMock("Input"),
-    Label: createMock("Label"),
+    Input,
+    Label,
     Modal,
     ProgressBar: createMock("ProgressBar"),
     Skeleton: createMock("Skeleton"),
+    Table,
     TextArea: createMock("TextArea"),
     TextField: createMock("TextField"),
   };

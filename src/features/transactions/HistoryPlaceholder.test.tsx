@@ -46,6 +46,7 @@ describe("HistoryPlaceholder", () => {
           amount: 35000,
           date: "2026-06-11",
           serviceName: "Manicura tradicional",
+          costAtTime: 9000,
         }),
         transaction({
           id: "expense-today",
@@ -73,6 +74,7 @@ describe("HistoryPlaceholder", () => {
     expect(screen.getAllByText("Hoy").length).toBeGreaterThan(0);
     expect(screen.getByText("09 jun 2026")).toBeTruthy();
     expect(screen.getByText("Manicura tradicional")).toBeTruthy();
+    expect(screen.getByText("Ganancia $ 26.000")).toBeTruthy();
     expect(screen.getByText("Insumos")).toBeTruthy();
     expect(screen.getByText("2 movimientos")).toBeTruthy();
   });
