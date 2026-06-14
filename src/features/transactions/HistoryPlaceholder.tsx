@@ -1,6 +1,6 @@
-import { Search, Trash2 } from "lucide-react";
+import { CalendarDays, Search, Trash2 } from "lucide-react";
 import { useMemo, useState, type KeyboardEvent } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { BottomSheet, Button, Card, ConfirmDialog, EmptyState, Input, Label, ScreenHero, TextField } from "../../shared/components/ui";
 import { useSpaData } from "../../shared/data/SpaDataContext";
 import type { Transaction, TransactionType } from "../../shared/types/domain";
@@ -41,6 +41,7 @@ const sortModes: Array<{ id: SortMode; label: string }> = [
 ];
 
 export function HistoryPlaceholder() {
+  const navigate = useNavigate();
   const { openRegister, showToast } = useOutletContext<{
     openRegister: (type: TransactionType) => void;
     showToast: (toast: { kind?: "success" | "warning" | "error"; message: string; actionLabel?: string; onAction?: () => void }) => void;
@@ -94,6 +95,17 @@ export function HistoryPlaceholder() {
 
       <Card className="ui-card history-controls">
         <Card.Content>
+          <div className="history-controls__header">
+            <div>
+              <span>Vista por fecha</span>
+              <strong>Revisa días y meses</strong>
+            </div>
+            <Button variant="secondary" onPress={() => navigate("/historial/calendario")}>
+              <CalendarDays aria-hidden="true" size={18} />
+              Ver calendario
+            </Button>
+          </div>
+
           <TextField className="form-control" name="history-search">
             <Label>Buscar movimiento</Label>
             <div className="search-field">

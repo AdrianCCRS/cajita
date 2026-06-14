@@ -316,6 +316,7 @@ type TabItem<T extends string> = {
   id: T;
   label: string;
   description?: string;
+  className?: string;
 };
 
 export function Tabs<T extends string>({
@@ -337,7 +338,7 @@ export function Tabs<T extends string>({
         return (
           <button
             aria-selected={isSelected}
-            className={`tab${isSelected ? " active" : ""}`}
+            className={`tab${item.className ? ` ${item.className}` : ""}${isSelected ? " active" : ""}`}
             key={item.id}
             role="tab"
             type="button"

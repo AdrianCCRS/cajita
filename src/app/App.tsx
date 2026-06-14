@@ -9,6 +9,7 @@ import { userDoc } from "../shared/lib/firestorePaths";
 import { db } from "../shared/lib/firebase";
 import { DashboardPlaceholder } from "../features/dashboard/DashboardPlaceholder";
 import { HistoryPlaceholder } from "../features/transactions/HistoryPlaceholder";
+import { TransactionCalendarPage } from "../features/transactions/TransactionCalendarPage";
 import { ServicesPlaceholder } from "../features/services/ServicesPlaceholder";
 import { SettingsPlaceholder } from "../features/settings/SettingsPlaceholder";
 import { getDoc } from "firebase/firestore";
@@ -25,6 +26,7 @@ export function App() {
                 <Route element={<AppShell />}>
                   <Route index element={<DashboardPlaceholder />} />
                   <Route path="historial" element={<HistoryPlaceholder />} />
+                  <Route path="historial/calendario" element={<TransactionCalendarPage />} />
                   <Route path="servicios" element={<ServicesPlaceholder />} />
                   <Route path="configuracion" element={<SettingsPlaceholder />} />
                   <Route path="*" element={<Navigate to="/" replace />} />

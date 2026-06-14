@@ -8,4 +8,11 @@ describe("App", () => {
 
     expect(await screen.findByText("Cajita")).toBeTruthy();
   });
+
+  it("no muestra Calendario en el menú principal", async () => {
+    render(<App />);
+
+    expect(await screen.findByText("Cajita")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /calendario/i })).toBeNull();
+  });
 });
