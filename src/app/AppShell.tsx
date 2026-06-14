@@ -66,8 +66,8 @@ export function AppShell() {
           {isFirebaseEnabled ? (
             <Dropdown>
               <Dropdown.Trigger>
-                <Avatar size="lg" variant="soft" color="accent">
-                  <Avatar.Fallback delayMs={600}>{getFirstLetters(business.name)}</Avatar.Fallback>
+                <Avatar size="lg" variant="soft">
+                  <Avatar.Fallback className="avatar--business" delayMs={600}>{getFirstLetters(business.name)}</Avatar.Fallback>
                 </Avatar>
               </Dropdown.Trigger>
               <Dropdown.Popover>

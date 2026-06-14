@@ -146,7 +146,7 @@ export function DashboardPlaceholder() {
       </ScreenHero>
 
       <div className="quick-strip">
-        <Button onPress={() => openRegister("income")}>
+        <Button onPress={() => openRegister("income")} className="btn-income">
           Registrar venta
         </Button>
         <Button variant="secondary" className="btn-expense" onPress={() => openRegister("expense")}>
@@ -262,10 +262,10 @@ export function DashboardPlaceholder() {
                     : `Te faltan ${formatCurrency(salaryPending)} para completar tu salario objetivo.`}
                 </p>
                 <div className="flex gap-2">
-                  <Button className="btn-withdrawal" variant="ghost" onPress={() => openRegister("withdrawal")}>
+                  <Button className="btn-business" variant="secondary" onPress={() => openRegister("withdrawal")}>
                     Registrar pago
                   </Button>
-                  <Button className="btn-voucher" variant="ghost" onPress={() => openRegister("personal_voucher")}>
+                  <Button className="btn-business" variant="secondary" onPress={() => openRegister("personal_voucher")}>
                     Registrar vale
                   </Button>
                 </div>
