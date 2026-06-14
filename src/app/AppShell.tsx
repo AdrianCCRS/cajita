@@ -165,7 +165,7 @@ function QuickActionFab({ onSelect }: { onSelect: (type: TransactionType) => voi
   return (
     <div className="fab-cluster">
       <div className={`fab-menu${isExpanded ? " fab-menu--expanded" : ""}`} aria-hidden={!isExpanded} aria-label="Acciones rápidas">
-        <Button onPress={() => choose("income")}>
+        <Button className="btn-income" onPress={() => choose("income")}>
           <Banknote aria-hidden="true" size={18} />
             Venta
           </Button>
@@ -298,7 +298,7 @@ function RegisterMovementSheet({
     <BottomSheet isOpen title="Nuevo movimiento" eyebrow="Registro rápido" onClose={onClose}>
       <form className="form-stack register-form" onSubmit={handleSubmit}>
         <div className="segmented" aria-label="Tipo de movimiento">
-          <Button variant={type === "income" ? "primary" : "tertiary"} onPress={() => changeType("income")}>
+          <Button variant={type === "income" ? "primary" : "tertiary"} className={type === "income" ? "segmented--income" : ""} onPress={() => changeType("income")}>
             <Banknote aria-hidden="true" size={16} />
             Venta
           </Button>
