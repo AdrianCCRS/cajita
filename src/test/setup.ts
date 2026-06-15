@@ -2,6 +2,17 @@ import "@testing-library/jest-dom/vitest";
 import { vi } from "vitest";
 import React from "react";
 
+const { createColor } = vi.hoisted(() => ({
+  createColor: (value: string) => {
+    const normalized = value.trim().startsWith("#") ? value.trim().toUpperCase() : `#${value.trim().toUpperCase()}`;
+
+    return {
+      value: normalized,
+      toString: () => normalized,
+    };
+  },
+}));
+
 vi.mock("react-apexcharts", () => ({
   default: ({
     options,
@@ -32,6 +43,49 @@ vi.mock("react-apexcharts", () => ({
   },
 }));
 
+vi.mock("react-aria-components/ColorField", () => ({
+  ColorField: ({ children, isInvalid, value: _value, onChange: _onChange, ...props }: any) =>
+    React.createElement("div", { ...props, "aria-invalid": isInvalid ? "true" : undefined, "data-testid": "ColorField" }, children),
+  FieldError: ({ children, ...props }: any) =>
+    React.createElement("p", { ...props, "data-testid": "ColorField.Error" }, children),
+  Input: ({ children: _children, ...props }: any) =>
+    React.createElement("input", { ...props, "data-testid": "ColorField.Input" }),
+  Label: ({ children, ...props }: any) =>
+    React.createElement("label", { ...props, "data-testid": "ColorField.Label" }, children),
+  Text: ({ children, ...props }: any) =>
+    React.createElement("p", { ...props, "data-testid": "ColorField.Text" }, children),
+  parseColor: (value: string) => createColor(value),
+}));
+
+vi.mock("react-aria-components/ColorSwatchPicker", () => {
+  let pickerOnChange: ((color: ReturnType<typeof createColor>) => void) | undefined;
+
+  return {
+    ColorSwatch: ({ children, ...props }: any) =>
+      React.createElement("span", { ...props, "data-testid": "ColorSwatch" }, children),
+    ColorSwatchPicker: ({ children, onChange, value: _value, ...props }: any) => {
+      pickerOnChange = onChange;
+      return React.createElement("div", { ...props, "data-testid": "ColorSwatchPicker" }, children);
+    },
+    ColorSwatchPickerItem: ({ children, color, onPress, ...props }: any) =>
+      React.createElement(
+        "button",
+        {
+          type: "button",
+          ...props,
+          "data-color": color,
+          "data-testid": "ColorSwatchPicker.Item",
+          onClick: () => {
+            onPress?.();
+            pickerOnChange?.(createColor(color));
+          },
+        },
+        children,
+      ),
+    parseColor: (value: string) => createColor(value),
+  };
+});
+
 vi.mock("@heroui/react", () => {
   const herouiOnlyProps = new Set([
     "isDisabled",
@@ -41,11 +95,14 @@ vi.mock("@heroui/react", () => {
     "isPending",
     "isRequired",
     "isRowHeader",
+    "isSelected",
     "firstDayOfWeek",
     "focusedValue",
     "onOpenChange",
     "visibleDuration",
     "variant",
+    "delayMs",
+    "textValue",
   ]);
 
   function cleanProps(props: Record<string, any>) {
@@ -88,12 +145,46 @@ vi.mock("@heroui/react", () => {
   );
   Label.displayName = "Label";
 
+  const Avatar = createMock("Avatar", {
+    Fallback: createMock("Avatar.Fallback"),
+    Image: createMock("Avatar.Image"),
+  });
+
   const Card = createMock("Card", {
     Header: createMock("Card.Header"),
     Title: createMock("Card.Title"),
     Description: createMock("Card.Description"),
     Content: createMock("Card.Content"),
     Footer: createMock("Card.Footer"),
+  });
+
+  let dropdownOnAction: ((key: string) => void) | undefined;
+  const Dropdown = createMock("Dropdown", {
+    Trigger: createMock("Dropdown.Trigger"),
+    Popover: createMock("Dropdown.Popover"),
+    Menu: React.forwardRef<HTMLDivElement, { children?: React.ReactNode; onAction?: (key: string) => void }>(
+      ({ children, onAction, ...props }, _ref) => {
+        dropdownOnAction = onAction;
+        return React.createElement("div", { ...cleanProps(props), "data-testid": "Dropdown.Menu" }, children);
+      },
+    ),
+    Item: React.forwardRef<HTMLButtonElement, { children?: React.ReactNode; id?: string }>(
+      ({ children, id, ...props }, _ref) =>
+        React.createElement(
+          "button",
+          {
+            type: "button",
+            ...cleanProps(props),
+            "data-testid": "Dropdown.Item",
+            onClick: () => {
+              if (id) {
+                dropdownOnAction?.(id);
+              }
+            },
+          },
+          children,
+        ),
+    ),
   });
 
   const Drawer = createMock("Drawer", {
@@ -229,18 +320,44 @@ vi.mock("@heroui/react", () => {
     ScrollContainer: createMock("Table.ScrollContainer"),
   });
 
+  const SwitchRoot = React.forwardRef<HTMLInputElement, { children?: React.ReactNode; isSelected?: boolean; onChange?: (isSelected: boolean) => void }>(
+    ({ children, isSelected, onChange, ...props }, _ref) =>
+      React.createElement(
+        "label",
+        { "data-testid": "Switch" },
+        React.createElement("input", {
+          ...cleanProps(props),
+          checked: Boolean(isSelected),
+          role: "switch",
+          type: "checkbox",
+          onChange: (event: React.ChangeEvent<HTMLInputElement>) => onChange?.(event.target.checked),
+        }),
+        children,
+      ),
+  );
+  SwitchRoot.displayName = "Switch";
+  const Switch = Object.assign(SwitchRoot, {
+    Control: createMock("Switch.Control"),
+    Content: createMock("Switch.Content"),
+    Icon: createMock("Switch.Icon"),
+    Thumb: createMock("Switch.Thumb"),
+  });
+
   return {
+    Avatar,
     Button,
     Calendar,
     Card,
     Chip: createMock("Chip"),
     Drawer,
+    Dropdown,
     FieldError: createMock("FieldError"),
     Input,
     Label,
     Modal,
     ProgressBar: createMock("ProgressBar"),
     Skeleton: createMock("Skeleton"),
+    Switch,
     Table,
     TextArea: createMock("TextArea"),
     TextField: createMock("TextField"),

@@ -1,7 +1,8 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
-:root {
+:root,
+[data-theme="light"] {
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--foreground);
@@ -11,24 +12,70 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
+  /* App theme tokens: estos pueden cambiar con el color visual elegido. */
+  --app-accent: oklch(0.52 0.12 205);
+  --app-accent-soft: oklch(0.94 0.035 205);
+  --app-accent-foreground: oklch(1 0 0);
+  --app-accent-ring: oklch(0.75 0.16 190 / 0.65);
+  --app-gradient-from: oklch(0.92 0.045 172);
+  --app-gradient-to: oklch(0.985 0.014 165 / 0);
+  --business: var(--app-accent);
+  --accent: var(--app-accent);
+  --accent-foreground: var(--app-accent-foreground);
+
+  /* Layout/base tokens. */
   --background: oklch(0.985 0.014 165);
   --surface: oklch(1 0 0);
   --surface-soft: oklch(0.965 0.02 165);
   --foreground: oklch(0.245 0.025 170);
   --muted: oklch(0.49 0.035 170);
   --line: oklch(0.885 0.028 165);
+
+  /* Financial transaction tokens: no se personalizan desde el tema visual. */
   --income: oklch(0.57 0.13 158);
   --income-soft: oklch(0.95 0.03 158);
   --expense: oklch(0.52 0.17 25);
   --expense-soft: oklch(0.92 0.03 25);
-  --business: oklch(0.52 0.12 205);
   --salary: oklch(0.72 0.16 78);
   --salary-soft: oklch(0.96 0.03 78);
   --danger: oklch(0.55 0.18 28);
   --warning: oklch(0.72 0.16 78);
   --vales: oklch(0.55 0.15 325);
   --vales-soft: oklch(0.95 0.03 325);
+
   --shadow: 0 16px 44px oklch(0.28 0.04 170 / 0.1);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --app-accent: oklch(0.72 0.12 205);
+  --app-accent-soft: color-mix(in srgb, var(--app-accent) 16%, var(--surface));
+  --app-accent-foreground: oklch(0.14 0.02 220);
+  --app-accent-ring: oklch(0.72 0.12 205 / 0.5);
+  --app-gradient-from: oklch(0.22 0.04 210);
+  --app-gradient-to: oklch(0.15 0.025 220 / 0);
+  --business: var(--app-accent);
+  --accent: var(--app-accent);
+  --accent-foreground: var(--app-accent-foreground);
+
+  --background: oklch(0.16 0.025 220);
+  --surface: oklch(0.205 0.025 220);
+  --surface-soft: oklch(0.26 0.028 220);
+  --foreground: oklch(0.95 0.01 210);
+  --muted: oklch(0.74 0.025 220);
+  --line: oklch(0.36 0.03 220);
+
+  --income: oklch(0.72 0.13 158);
+  --income-soft: oklch(0.26 0.055 158);
+  --expense: oklch(0.72 0.15 25);
+  --expense-soft: oklch(0.27 0.055 25);
+  --salary: oklch(0.82 0.15 78);
+  --salary-soft: oklch(0.3 0.05 78);
+  --danger: oklch(0.72 0.15 28);
+  --warning: oklch(0.82 0.15 78);
+  --vales: oklch(0.75 0.13 325);
+  --vales-soft: oklch(0.28 0.055 325);
+  --shadow: 0 18px 48px oklch(0 0 0 / 0.36);
 }
 
 * {
@@ -76,7 +123,7 @@ input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
 a:focus-visible {
-  outline: 3px solid oklch(0.75 0.16 190 / 0.65);
+  outline: 3px solid var(--app-accent-ring);
   outline-offset: 2px;
 }
 
@@ -116,7 +163,7 @@ h3 {
   min-height: 100vh;
   padding: 18px 14px calc(108px + env(safe-area-inset-bottom));
   background:
-    linear-gradient(180deg, oklch(0.92 0.045 172) 0%, oklch(0.985 0.014 165 / 0) 260px),
+    linear-gradient(180deg, var(--app-gradient-from) 0%, var(--app-gradient-to) 260px),
     var(--background);
 }
 
@@ -158,12 +205,37 @@ h3 {
   gap: 8px;
 }
 
+.dropdown-theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 8px 8px 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--surface-soft);
+}
+
+.dropdown-theme-row__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--foreground);
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.dropdown-theme-row__label svg {
+  color: var(--business);
+}
+
 .auth-screen,
 .onboarding-screen {
   min-height: 100vh;
   padding: 20px 14px 30px;
   background:
-    linear-gradient(180deg, oklch(0.92 0.045 172) 0%, oklch(0.985 0.014 165 / 0) 280px),
+    linear-gradient(180deg, var(--app-gradient-from) 0%, var(--app-gradient-to) 280px),
     var(--background);
 }
 
@@ -337,7 +409,8 @@ h3 {
 
 .btn-business {
   border-color: var(--business);
-  background-color: var(--surface-soft);
+  background-color: var(--app-accent-soft);
+  color: var(--business);
 }
 
 .btn-income {
@@ -425,7 +498,7 @@ h3 {
 }
 
 .metric-card--vale {
-  border-left: 5px solid var(--vale);
+  border-left: 5px solid var(--vales);
 }
 
 .setup-summary {
@@ -815,9 +888,188 @@ h3 {
   width: 44%;
 }
 
+.theme-settings-card {
+  box-shadow: none;
+}
+
+.theme-settings-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.theme-settings-heading__icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--app-accent-soft);
+  color: var(--business);
+}
+
+.theme-settings-heading span,
+.theme-control-block > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.theme-settings-heading strong {
+  display: block;
+  color: var(--foreground);
+  font-size: 1.25rem;
+  line-height: 1.1;
+}
+
+.theme-settings-heading p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.theme-controls,
+.theme-control-block,
+.theme-color-field,
+.theme-preview {
+  display: grid;
+  gap: 10px;
+}
+
+.theme-swatch-picker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.theme-swatch-option {
+  display: grid;
+  min-height: 72px;
+  place-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--surface);
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.theme-swatch-option[data-selected="true"] {
+  border-color: var(--business);
+  background: var(--app-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--business);
+}
+
+.theme-swatch {
+  width: 30px;
+  height: 30px;
+  border: 2px solid oklch(1 0 0 / 0.9);
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.theme-swatch-option span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.theme-color-field label {
+  color: var(--foreground);
+  font-weight: 850;
+}
+
+.theme-color-field input {
+  text-transform: uppercase;
+}
+
+.theme-preview {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--preview-accent-soft);
+}
+
+.theme-preview .section-heading strong {
+  font-size: 1.08rem;
+}
+
+.theme-preview__surface {
+  display: grid;
+  gap: 10px;
+  border: 1px solid oklch(1 0 0 / 0.8);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface);
+}
+
+.theme-preview__surface span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.theme-preview__surface strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--foreground);
+  font-size: 1rem;
+}
+
+.theme-preview__button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 14px;
+  background: var(--preview-accent);
+  color: var(--preview-accent-foreground);
+  font-weight: 850;
+}
+
+.theme-finance-preview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.finance-token {
+  min-width: 0;
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.finance-token--income {
+  background: var(--income-soft);
+  color: var(--income);
+}
+
+.finance-token--expense {
+  background: var(--expense-soft);
+  color: var(--expense);
+}
+
+.finance-token--salary {
+  background: var(--salary-soft);
+  color: var(--salary);
+}
+
+.finance-token--vales {
+  background: var(--vales-soft);
+  color: var(--vales);
+}
+
 .dashboard-summary {
   background:
-    linear-gradient(135deg, oklch(0.98 0.02 168), oklch(1 0 0));
+    linear-gradient(135deg, var(--app-accent-soft), var(--surface));
 }
 
 .dashboard-summary > div {
@@ -855,7 +1107,7 @@ h3 {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 10px;
-  background: oklch(1 0 0 / 0.72);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
 }
 
 .summary-metrics b {
@@ -877,7 +1129,7 @@ h3 {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 6px;
-  background: oklch(1 0 0 / 0.92);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
   box-shadow: 0 10px 28px oklch(0.28 0.04 170 / 0.08);
   backdrop-filter: blur(14px);
 }
@@ -1141,7 +1393,7 @@ h3 {
 }
 
 .history-list .list-row {
-  background: oklch(1 0 0 / 0.86);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
 }
 
 .calendar-back-row {
@@ -1329,7 +1581,7 @@ h3 {
 }
 
 .native-date {
-  color-scheme: light;
+  color-scheme: light dark;
 }
 
 .bottom-nav {
@@ -1346,7 +1598,7 @@ h3 {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 8px;
-  background: oklch(1 0 0 / 0.94);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
   box-shadow: var(--shadow);
   backdrop-filter: blur(18px);
 }
@@ -1417,7 +1669,8 @@ h3 {
   height: 60px;
   border-radius: 999px;
   background: var(--business);
-  box-shadow: 0 18px 40px oklch(0.48 0.14 190 / 0.28);
+  color: var(--app-accent-foreground);
+  box-shadow: 0 18px 40px var(--app-accent-ring);
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -1549,6 +1802,19 @@ h3 {
 
   .settings-overview__metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .theme-swatch-picker {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .theme-preview__surface {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+
+  .theme-finance-preview {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .service-table th,

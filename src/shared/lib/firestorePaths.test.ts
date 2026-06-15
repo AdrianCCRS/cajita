@@ -65,6 +65,7 @@ import {
   servicesCollection,
   transactionDoc,
   transactionsCollection,
+  uiSettingsDoc,
   userDoc,
 } from "./firestorePaths";
 
@@ -187,6 +188,12 @@ describe("firestorePaths", () => {
   it("financialSettingsDoc construye la ruta correcta", () => {
     const ref = financialSettingsDoc(db, uid);
     expect(ref.path).toBe("users/user-abc-123/businesses/main/financialSettings/main");
+    expect(ref.type).toBe("document");
+  });
+
+  it("uiSettingsDoc construye la ruta correcta", () => {
+    const ref = uiSettingsDoc(db, uid);
+    expect(ref.path).toBe("users/user-abc-123/businesses/main/uiSettings/main");
     expect(ref.type).toBe("document");
   });
 

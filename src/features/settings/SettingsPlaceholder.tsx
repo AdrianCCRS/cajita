@@ -6,6 +6,7 @@ import type { FixedExpense } from "../../shared/types/domain";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
 import { getTotalFixedExpenses } from "../../shared/utils/financials";
 import { fixedExpenseSchema, salarySchema } from "../../shared/validation/schemas";
+import { AppThemeSettingsCard } from "./AppThemeSettingsCard";
 
 type FixedExpenseSheetMode = "create" | "edit";
 
@@ -124,6 +125,8 @@ export function SettingsPlaceholder() {
           </div>
         </Card.Content>
       </Card>
+
+      <AppThemeSettingsCard />
 
       {fixedExpenses.length ? (
         <Card className="ui-card service-table-card">

@@ -27,6 +27,7 @@ import {
   servicesCollection,
   transactionDoc,
   transactionsCollection,
+  uiSettingsDoc,
 } from "../lib/firestorePaths";
 import { getFirebaseDb } from "../lib/firebase";
 import type {
@@ -42,9 +43,12 @@ import type {
   Service,
   ServiceMaterial,
   Transaction,
+  UiSettings,
 } from "../types/domain";
 import { formatInputDate } from "../utils/dates";
 import { buildRawMaterialCalculation, buildServiceMaterial, calculateServiceEstimatedCost } from "../utils/rawMaterials";
+import { applyThemeFromSettings, normalizeHexColor } from "../utils/themeColor";
+import { applyThemeMode, defaultThemeMode, isThemeMode, type ThemeMode } from "../utils/themeMode";
 
 type TransactionInput =
   | {
@@ -95,6 +99,9 @@ type SpaData = SpaState & {
   deleteServiceMaterial: (serviceId: string, materialId: string) => Promise<void>;
   upsertFixedExpense: (input: Pick<FixedExpense, "name" | "amount"> & { id?: string }) => Promise<void>;
   updateSalaryTarget: (salaryTarget: number) => Promise<void>;
+  updateAppAccentColor: (color: string) => Promise<void>;
+  resetAppAccentColor: () => Promise<void>;
+  updateThemeMode: (themeMode: ThemeMode) => Promise<void>;
 };
 
 type RawMaterialInput = Pick<RawMaterial, "name" | "measurementType" | "purchaseQuantity" | "purchaseUnit" | "purchasePrice"> & {
@@ -123,6 +130,7 @@ type SpaState = {
   personalExpenseCategories: PersonalExpenseCategory[];
   transactions: Transaction[];
   financialSettings: FinancialSettings;
+  uiSettings: UiSettings;
 };
 
 const initialState: SpaState = {
@@ -136,6 +144,7 @@ const initialState: SpaState = {
   personalExpenseCategories: defaultPersonalExpenseCategories.map((item) => ({ ...item, createdAt: now, updatedAt: now })),
   transactions: [],
   financialSettings: { salaryTarget: 1800000, updatedAt: now },
+  uiSettings: { appAccentColor: null, themeMode: defaultThemeMode, updatedAt: now },
 };
 
 const SpaDataContext = createContext<SpaData | null>(null);
@@ -155,7 +164,19 @@ function readInitialState(): SpaState {
   }
 
   try {
-    return { ...initialState, ...JSON.parse(stored) };
+    const parsed = JSON.parse(stored) as Partial<SpaState>;
+    return {
+      ...initialState,
+      ...parsed,
+      financialSettings: {
+        ...initialState.financialSettings,
+        ...parsed.financialSettings,
+      },
+      uiSettings: {
+        ...initialState.uiSettings,
+        ...parsed.uiSettings,
+      },
+    };
   } catch {
     return initialState;
   }
@@ -305,10 +326,12 @@ export function SpaDataProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<SpaState>(useFirestore ? initialState : readInitialState);
   const [isLoading, setIsLoading] = useState(useFirestore);
   const [error, setError] = useState<string | null>(null);
+  const [hasUiSettingsLoaded, setHasUiSettingsLoaded] = useState(!useFirestore);
 
   useEffect(() => {
     if (!useFirestore || !db || !user) {
       setIsLoading(false);
+      setHasUiSettingsLoaded(true);
       return undefined;
     }
 
@@ -316,6 +339,7 @@ export function SpaDataProvider({ children }: { children: ReactNode }) {
     const unsubscribers: Array<() => void> = [];
     setIsLoading(true);
     setError(null);
+    setHasUiSettingsLoaded(false);
 
     try {
       unsubscribers.push(
@@ -356,6 +380,20 @@ export function SpaDataProvider({ children }: { children: ReactNode }) {
               : initialState.financialSettings,
           }));
         }),
+        onSnapshot(uiSettingsDoc(db, user.uid), (snapshot) => {
+          const data = snapshot.data();
+          setState((current) => ({
+            ...current,
+            uiSettings: snapshot.exists()
+              ? ({
+                  ...initialState.uiSettings,
+                  ...data,
+                  themeMode: isThemeMode(data?.themeMode) ? data.themeMode : defaultThemeMode,
+                } as UiSettings)
+              : initialState.uiSettings,
+          }));
+          setHasUiSettingsLoaded(true);
+        }),
       );
       if (!cancelled) {
         setIsLoading(false);
@@ -372,6 +410,22 @@ export function SpaDataProvider({ children }: { children: ReactNode }) {
       unsubscribers.forEach((unsubscribe) => unsubscribe());
     };
   }, [db, useFirestore, user]);
+
+  useEffect(() => {
+    if (useFirestore && !hasUiSettingsLoaded) {
+      return;
+    }
+
+    applyThemeFromSettings(state.uiSettings.appAccentColor);
+  }, [hasUiSettingsLoaded, state.uiSettings.appAccentColor, useFirestore]);
+
+  useEffect(() => {
+    if (useFirestore && !hasUiSettingsLoaded) {
+      return;
+    }
+
+    applyThemeMode(state.uiSettings.themeMode);
+  }, [hasUiSettingsLoaded, state.uiSettings.themeMode, useFirestore]);
 
   useEffect(() => {
     if (!useFirestore || !db || !user || state.services.length === 0) {
@@ -798,6 +852,51 @@ export function SpaDataProvider({ children }: { children: ReactNode }) {
           await setDoc(financialSettingsDoc(db, user.uid), nextSettings, { merge: true });
         } else {
           commitLocal((current) => ({ ...current, financialSettings: nextSettings }));
+        }
+      },
+      async updateAppAccentColor(color) {
+        const timestamp = new Date().toISOString();
+        const nextSettings: UiSettings = {
+          ...state.uiSettings,
+          appAccentColor: normalizeHexColor(color),
+          createdAt: state.uiSettings.createdAt ?? timestamp,
+          updatedAt: timestamp,
+        };
+
+        if (useFirestore && db && user) {
+          await setDoc(uiSettingsDoc(db, user.uid), nextSettings, { merge: true });
+        } else {
+          commitLocal((current) => ({ ...current, uiSettings: nextSettings }));
+        }
+      },
+      async resetAppAccentColor() {
+        const nextSettings: UiSettings = {
+          ...state.uiSettings,
+          appAccentColor: null,
+          updatedAt: new Date().toISOString(),
+        };
+
+        if (useFirestore && db && user) {
+          await setDoc(uiSettingsDoc(db, user.uid), nextSettings, { merge: true });
+        } else {
+          commitLocal((current) => ({ ...current, uiSettings: nextSettings }));
+        }
+      },
+      async updateThemeMode(themeMode) {
+        const timestamp = new Date().toISOString();
+        const nextSettings: UiSettings = {
+          ...state.uiSettings,
+          themeMode,
+          createdAt: state.uiSettings.createdAt ?? timestamp,
+          updatedAt: timestamp,
+        };
+
+        applyThemeMode(themeMode);
+
+        if (useFirestore && db && user) {
+          await setDoc(uiSettingsDoc(db, user.uid), nextSettings, { merge: true });
+        } else {
+          commitLocal((current) => ({ ...current, uiSettings: nextSettings }));
         }
       },
     }),

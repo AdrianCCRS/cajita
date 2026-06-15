@@ -116,6 +116,15 @@ export type FinancialSettings = {
   updatedAt: unknown;
 };
 
+export type ThemeMode = "light" | "dark";
+
+export type UiSettings = {
+  appAccentColor: string | null;
+  themeMode: ThemeMode;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+};
+
 export type Transaction = {
   id: string;
   type: TransactionType;

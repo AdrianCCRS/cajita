@@ -154,6 +154,20 @@ service cloud.firestore {
       return isZeroOrPositiveNumber(data.salaryTarget);
     }
 
+    function validUiSettings(data) {
+      return (
+        !('appAccentColor' in data)
+        || data.appAccentColor == null
+        || (
+          data.appAccentColor is string
+          && data.appAccentColor.matches('^#[0-9A-Fa-f]{6}$')
+        )
+      ) && (
+        !('themeMode' in data)
+        || data.themeMode in ['light', 'dark']
+      );
+    }
+
     match /users/{userId} {
       allow read: if signedInAs(userId);
       allow create, update: if signedInAs(userId) && validUserProfile(request.resource.data);
@@ -215,6 +229,12 @@ service cloud.firestore {
         match /financialSettings/main {
           allow read: if signedInAs(userId);
           allow create, update: if signedInAs(userId) && validFinancialSettings(request.resource.data);
+          allow delete: if signedInAs(userId);
+        }
+
+        match /uiSettings/main {
+          allow read: if signedInAs(userId);
+          allow create, update: if signedInAs(userId) && validUiSettings(request.resource.data);
           allow delete: if signedInAs(userId);
         }
       }
