@@ -45,7 +45,7 @@ describe("MetricCard", () => {
 
   it("aplica clase de tono correcta", () => {
     const { container } = render(<MetricCard title="Ganancia" value="$200.000" tone="profit" />);
-    expect(container.querySelector(".metric-card--profit")).toBeTruthy();
+    expect(container.querySelector(".metric-card--vale")).toBeTruthy();
   });
 });
 
@@ -274,5 +274,18 @@ describe("Tabs", () => {
 
     expect(activeTab).toBe("month");
     expect(screen.getByRole("tab", { name: /Mes/ })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("aplica className por pestaña", () => {
+    render(
+      <Tabs
+        ariaLabel="Rango del dashboard"
+        items={[{ id: "today", label: "Hoy", className: "tab--income" }]}
+        value="today"
+        onChange={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole("tab", { name: /Hoy/ })).toHaveClass("tab--income");
   });
 });

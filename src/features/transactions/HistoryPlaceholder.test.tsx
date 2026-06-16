@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Transaction } from "../../shared/types/domain";
 import { HistoryPlaceholder } from "./HistoryPlaceholder";
 
-const { spaDataMock } = vi.hoisted(() => ({
+const { navigateMock, spaDataMock } = vi.hoisted(() => ({
+  navigateMock: vi.fn(),
   spaDataMock: vi.fn(),
 }));
 
@@ -12,6 +13,7 @@ vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
   return {
     ...actual,
+    useNavigate: () => navigateMock,
     useOutletContext: () => ({
       openRegister: vi.fn(),
       showToast: vi.fn(),
@@ -38,6 +40,7 @@ function transaction(input: Partial<Transaction> & Pick<Transaction, "id" | "typ
 
 describe("HistoryPlaceholder", () => {
   beforeEach(() => {
+    navigateMock.mockClear();
     spaDataMock.mockReturnValue({
       transactions: [
         transaction({
@@ -98,6 +101,15 @@ describe("HistoryPlaceholder", () => {
     expect(screen.getByText("Alimentación")).toBeTruthy();
     expect(screen.getByText("Vales $ 10.000")).toBeTruthy();
     expect(screen.getAllByText("1 movimientos").length).toBeGreaterThan(0);
+  });
+
+  it("muestra el botón de calendario dentro de Historial", async () => {
+    const user = userEvent.setup();
+    render(<HistoryPlaceholder />);
+
+    await user.click(screen.getByText("Ver calendario"));
+
+    expect(navigateMock).toHaveBeenCalledWith("/historial/calendario");
   });
 
   it("filtra por tipo sin mostrar movimientos de otros tipos", async () => {

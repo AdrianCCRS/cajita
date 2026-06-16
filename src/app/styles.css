@@ -18,13 +18,16 @@
   --muted: oklch(0.49 0.035 170);
   --line: oklch(0.885 0.028 165);
   --income: oklch(0.57 0.13 158);
+  --income-soft: oklch(0.95 0.03 158);
   --expense: oklch(0.52 0.17 25);
   --expense-soft: oklch(0.92 0.03 25);
   --business: oklch(0.52 0.12 205);
   --salary: oklch(0.72 0.16 78);
-  --profit: oklch(0.55 0.15 325);
+  --salary-soft: oklch(0.96 0.03 78);
   --danger: oklch(0.55 0.18 28);
   --warning: oklch(0.72 0.16 78);
+  --vales: oklch(0.55 0.15 325);
+  --vales-soft: oklch(0.95 0.03 325);
   --shadow: 0 16px 44px oklch(0.28 0.04 170 / 0.1);
 }
 
@@ -211,6 +214,11 @@ h3 {
   margin-bottom: 16px;
 }
 
+.avatar--business {
+  color: var(--business);
+  background: var(--surface-soft);
+}
+
 .stepper,
 .form-stack,
 .onboarding-form,
@@ -327,6 +335,11 @@ h3 {
   border-left: 5px solid var(--expense);
 }
 
+.btn-business {
+  border-color: var(--business);
+  background-color: var(--surface-soft);
+}
+
 .btn-income {
   border-color: var(--income);
   background-color: var(--income);
@@ -358,12 +371,12 @@ h3 {
 }
 
 .btn-voucher {
-  border-color: var(--business);
-  color: var(--business);
+  border-color: var(--vales);
+  color: var(--vales);
 }
 
 .segmented--voucher {
-  background: var(--business);
+  background: var(--vales);
   color: oklch(1 0 0);
 }
 
@@ -392,11 +405,11 @@ h3 {
 }
 
 .row--personal_voucher {
-  border-left: 4px solid var(--business);
+  border-left: 4px solid var(--vales);
 }
 
 .row--personal_voucher span {
-  color: var(--business);
+  color: var(--vales);
 }
 
 .progress--expense [data-slot="fill"] {
@@ -411,8 +424,8 @@ h3 {
   border-left: 5px solid var(--salary);
 }
 
-.metric-card--profit {
-  border-left: 5px solid var(--profit);
+.metric-card--vale {
+  border-left: 5px solid var(--vale);
 }
 
 .setup-summary {
@@ -1041,6 +1054,28 @@ h3 {
   gap: 12px;
 }
 
+.history-controls__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.history-controls__header span,
+.calendar-summary-card span,
+.calendar-card .section-heading span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.history-controls__header strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 1rem;
+  line-height: 1.15;
+}
+
 .search-field {
   position: relative;
   display: grid;
@@ -1107,6 +1142,190 @@ h3 {
 
 .history-list .list-row {
   background: oklch(1 0 0 / 0.86);
+}
+
+.calendar-back-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.calendar-type-shell {
+  display: grid;
+}
+
+.calendar-type-shell .tabs {
+  position: static;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.calendar-type-shell .tab {
+  min-height: 46px;
+}
+
+.calendar-type-shell .tab span {
+  font-size: 0.82rem;
+}
+
+.calendar-type-shell .calendar-tone--income.active {
+  background: var(--income-soft);
+  color: var(--income) !important; 
+}
+
+.calendar-type-shell .calendar-tone--expense.active {
+  background: var(--expense-soft);
+  color: var(--expense) !important;
+}
+
+.calendar-type-shell .calendar-tone--withdrawal.active {
+  background: var(--salary-soft);
+  color: var(--salary) !important;
+}
+
+.calendar-type-shell .calendar-tone--personal_voucher.active {
+  background: var(--vales-soft);
+  color: var(--vales) !important;
+}
+
+.calendar-card {
+  box-shadow: none;
+}
+
+.calendar-card .section-heading strong {
+  font-size: 1.25rem;
+}
+
+.transaction-calendar {
+  width: 100%;
+  max-width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.transaction-calendar .calendar__header {
+  display: grid;
+  grid-template-columns: 42px 1fr 42px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.transaction-calendar .calendar__heading {
+  text-align: center;
+  color: var(--foreground);
+  font-size: 1rem;
+  font-weight: 900;
+  text-transform: capitalize;
+}
+
+.transaction-calendar .calendar__nav-button {
+  min-width: 42px;
+  min-height: 42px;
+  border-radius: 8px;
+}
+
+.transaction-calendar .calendar__grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 3px;
+  table-layout: fixed;
+}
+
+.transaction-calendar .calendar__header-cell {
+  height: 28px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.transaction-calendar .calendar__cell {
+  position: relative;
+  display: grid;
+  width: 100%;
+  min-height: 50px;
+  place-items: start center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding-top: 8px;
+  background: var(--surface-soft);
+  color: var(--foreground);
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.transaction-calendar .calendar__cell[data-outside-month="true"] {
+  opacity: 0.45;
+}
+
+.transaction-calendar .calendar__cell[data-today="true"] {
+  border-color: var(--business);
+}
+
+.transaction-calendar .calendar__cell[data-selected="true"] {
+  background: var(--foreground);
+  color: var(--surface);
+}
+
+.calendar-day-count {
+  position: absolute;
+  right: 50%;
+  bottom: 3px;
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 2px solid var(--surface-soft);
+  border-radius: 999px;
+  padding-inline: 5px;
+  color: oklch(1 0 0);
+  font-size: 0.66rem;
+  font-weight: 950;
+  line-height: 1;
+  transform: translateX(50%);
+}
+
+.calendar-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.calendar-summary-card {
+  box-shadow: none;
+}
+
+.calendar-summary-card > div {
+  gap: 8px;
+}
+
+.calendar-summary-card strong {
+  overflow-wrap: anywhere;
+  color: var(--foreground);
+  font-size: 1.08rem;
+  line-height: 1.08;
+}
+
+.calendar-chart-card .section-heading strong {
+  font-size: 1.28rem;
+}
+
+.calendar-chart {
+  width: 100%;
+  min-width: 0;
+  height: 240px;
+}
+
+.calendar-day-detail {
+  gap: 10px;
+}
+
+.calendar-day-movements {
+  display: grid;
+  gap: 8px;
 }
 
 .native-date {
@@ -1197,6 +1416,7 @@ h3 {
   width: 60px;
   height: 60px;
   border-radius: 999px;
+  background: var(--business);
   box-shadow: 0 18px 40px oklch(0.48 0.14 190 / 0.28);
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -1344,8 +1564,25 @@ h3 {
     grid-template-columns: 1fr 1fr;
   }
 
+  .calendar-type-shell {
+    justify-content: center;
+  }
+
+  .calendar-type-shell .tabs {
+    width: min(100%, 620px);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .calendar-summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .dashboard-chart {
     height: 300px;
+  }
+
+  .calendar-chart {
+    height: 280px;
   }
 
   .chart-hbar {

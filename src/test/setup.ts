@@ -41,7 +41,10 @@ vi.mock("@heroui/react", () => {
     "isPending",
     "isRequired",
     "isRowHeader",
+    "firstDayOfWeek",
+    "focusedValue",
     "onOpenChange",
+    "visibleDuration",
     "variant",
   ]);
 
@@ -114,6 +117,96 @@ vi.mock("@heroui/react", () => {
     Footer: createMock("Modal.Footer"),
   });
 
+  let calendarOnChange: ((date: any) => void) | undefined;
+  let calendarOnFocusChange: ((date: any) => void) | undefined;
+
+  const CalendarCell = React.forwardRef<HTMLButtonElement, { children?: React.ReactNode | ((props: any) => React.ReactNode); date?: any }>(
+    ({ children, date, ...props }, _ref) =>
+      React.createElement(
+        "button",
+        {
+          type: "button",
+          ...cleanProps(props),
+          "data-date": date?.toString?.(),
+          "data-testid": "Calendar.Cell",
+          onClick: () => {
+            calendarOnChange?.(date);
+            calendarOnFocusChange?.(date);
+          },
+        },
+        typeof children === "function"
+          ? children({ formattedDate: String(date?.day ?? ""), isOutsideMonth: false })
+          : children,
+      ),
+  );
+  CalendarCell.displayName = "Calendar.Cell";
+
+  const CalendarGrid = React.forwardRef<HTMLDivElement, { children?: React.ReactNode }>(({ children, ...props }, _ref) =>
+    React.createElement("div", { ...cleanProps(props), "data-testid": "Calendar.Grid" }, children),
+  );
+  CalendarGrid.displayName = "Calendar.Grid";
+
+  const CalendarGridHeader = React.forwardRef<HTMLDivElement, { children?: React.ReactNode | ((value: any) => React.ReactNode) }>(
+    ({ children, ...props }, _ref) => {
+    const weekdays = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"];
+      const headerRenderer = typeof children === "function" ? children : undefined;
+
+      return React.createElement(
+        "div",
+        { ...cleanProps(props), "data-testid": "Calendar.GridHeader" },
+        weekdays.map((day) => React.createElement("span", { key: day }, headerRenderer?.(day) ?? day)),
+      );
+    },
+  );
+  CalendarGridHeader.displayName = "Calendar.GridHeader";
+
+  const CalendarGridBody = React.forwardRef<HTMLDivElement, { children?: React.ReactNode | ((value: any) => React.ReactNode) }>(
+    ({ children, ...props }, _ref) => {
+      const cellRenderer = typeof children === "function" ? children : undefined;
+    const dates = Array.from({ length: 31 }, (_, index) => ({
+      day: index + 1,
+      month: 6,
+      year: 2026,
+      toDate: () => new Date(2026, 5, index + 1),
+      toString: () => `2026-06-${String(index + 1).padStart(2, "0")}`,
+    }));
+
+    return React.createElement(
+      "div",
+        { ...cleanProps(props), "data-testid": "Calendar.GridBody" },
+      dates.map((date) => React.createElement("span", { key: date.toString() }, cellRenderer?.(date))),
+    );
+    },
+  );
+  CalendarGridBody.displayName = "Calendar.GridBody";
+
+  const CalendarRoot = React.forwardRef<HTMLDivElement, { children?: React.ReactNode; onChange?: (date: any) => void; onFocusChange?: (date: any) => void }>(
+    ({ children, onChange, onFocusChange, ...props }, _ref) => {
+      calendarOnChange = onChange;
+      calendarOnFocusChange = onFocusChange;
+      return React.createElement("div", { ...cleanProps(props), "data-testid": "Calendar" }, children);
+    },
+  );
+  CalendarRoot.displayName = "Calendar";
+
+  const Calendar = Object.assign(CalendarRoot, {
+    Header: createMock("Calendar.Header"),
+    Heading: React.forwardRef<HTMLHeadingElement, { children?: React.ReactNode }>(({ children, ...props }, _ref) =>
+      React.createElement("h2", { ...cleanProps(props), "data-testid": "Calendar.Heading" }, children ?? "junio 2026"),
+    ),
+    NavButton: React.forwardRef<HTMLButtonElement, { children?: React.ReactNode }>(({ children, ...props }, _ref) =>
+      React.createElement("button", { type: "button", ...cleanProps(props), "data-testid": "Calendar.NavButton" }, children),
+    ),
+    Grid: CalendarGrid,
+    GridHeader: CalendarGridHeader,
+    GridBody: CalendarGridBody,
+    HeaderCell: createMock("Calendar.HeaderCell"),
+    Cell: CalendarCell,
+    CellIndicator: React.forwardRef<HTMLSpanElement, { children?: React.ReactNode; "data-testid"?: string }>(({ children, ...props }, _ref) =>
+      React.createElement("span", { ...cleanProps(props), "data-testid": props["data-testid"] ?? "Calendar.CellIndicator" }, children),
+    ),
+  });
+
   const Table = createMock("Table", {
     Body: React.forwardRef<HTMLTableSectionElement, { children?: React.ReactNode }>(({ children, ...props }, _ref) =>
       React.createElement("tbody", cleanProps(props), children),
@@ -138,6 +231,7 @@ vi.mock("@heroui/react", () => {
 
   return {
     Button,
+    Calendar,
     Card,
     Chip: createMock("Chip"),
     Drawer,
@@ -150,5 +244,26 @@ vi.mock("@heroui/react", () => {
     Table,
     TextArea: createMock("TextArea"),
     TextField: createMock("TextField"),
+  };
+});
+
+vi.mock("recharts", () => {
+  const chartOnlyProps = new Set(["dataKey", "formatter", "labelFormatter", "margin", "radius", "tickFormatter", "tickLine"]);
+  function cleanChartProps(props: Record<string, any>) {
+    return Object.fromEntries(Object.entries(props).filter(([key]) => !chartOnlyProps.has(key)));
+  }
+
+  const ChartMock = ({ children, data, ...props }: { children?: React.ReactNode; data?: unknown[] }) =>
+    React.createElement("div", { ...cleanChartProps(props), "data-chart-items": JSON.stringify(data ?? []), "data-testid": "RechartsChart" }, children);
+  const Passthrough = ({ children, ...props }: { children?: React.ReactNode }) =>
+    React.createElement("div", cleanChartProps(props), children);
+
+  return {
+    Bar: Passthrough,
+    BarChart: ChartMock,
+    ResponsiveContainer: Passthrough,
+    Tooltip: Passthrough,
+    XAxis: Passthrough,
+    YAxis: Passthrough,
   };
 });
