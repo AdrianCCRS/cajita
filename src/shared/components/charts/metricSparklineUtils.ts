@@ -3,13 +3,15 @@ export type MetricSparklinePoint = {
   value: number;
 };
 
-export type MetricSparklineType =
+export type MetricChartType =
   | "income"
   | "expense"
   | "profit"
   | "withdrawal"
   | "personal_voucher"
   | "business";
+
+export type MetricSparklineType = MetricChartType;
 
 const numberFormatter = new Intl.NumberFormat("es-CO", {
   maximumFractionDigits: 0,
@@ -25,7 +27,7 @@ export function formatMetricSparklineValue(value: number, currency = false) {
   return currency ? currencyFormatter.format(value) : numberFormatter.format(value);
 }
 
-export function getMetricSparklineColor(type: MetricSparklineType = "business") {
+export function getMetricChartColor(type: MetricChartType = "business") {
   switch (type) {
     case "income":
       return "var(--income)";
@@ -36,11 +38,15 @@ export function getMetricSparklineColor(type: MetricSparklineType = "business") 
     case "personal_voucher":
       return "var(--vales)";
     case "profit":
-      return "var(--app-accent, var(--business))";
+      return "var(--profit)";
     case "business":
     default:
       return "var(--business)";
   }
+}
+
+export function getMetricSparklineColor(type: MetricSparklineType = "business") {
+  return getMetricChartColor(type);
 }
 
 export function getMetricSparklineToneClass(type: MetricSparklineType = "business") {

@@ -7,7 +7,9 @@ import {
   getDailyIncomeChartData,
   getExpensesByCategoryChartData,
   getHistoricalMonthlyMetricSparklineData,
+  getMoneyCompositionChartData,
   getMonthlyMetricSparklineData,
+  getServiceContributionChartData,
   getServicesByCountChartData,
   getServicesByRevenueChartData,
   getWeeklyIncomeExpenseChartData,
@@ -33,7 +35,7 @@ import { DailyIncomeTrendChart } from "./DailyIncomeTrendChart";
 import { DashboardChartCard } from "./DashboardChartCard";
 import { ExpensesByCategoryChart } from "./ExpensesByCategoryChart";
 import { TopServicesChart } from "./TopServicesChart";
-import { MetricSparklineCard } from "../../shared/components/charts";
+import { MetricDonutCard, MetricSparklineCard } from "../../shared/components/charts";
 type DashboardHelpKey = "income" | "expense" | "business" | "salary" | "profit" | "breakEven";
 type DashboardTab = "today" | "month" | "history";
 
@@ -128,6 +130,20 @@ export function DashboardPlaceholder() {
   const historicalExpensesSparklineData = getHistoricalMonthlyMetricSparklineData(transactions, "expense");
   const historicalBusinessSparklineData = getHistoricalMonthlyMetricSparklineData(transactions, "business");
   const historicalProfitSparklineData = getHistoricalMonthlyMetricSparklineData(transactions, "profit");
+  const monthlyMoneyComposition = getMoneyCompositionChartData({
+    income: monthlyIncome,
+    expenses: monthlyExpenses,
+    withdrawals: monthlyWithdrawals,
+    personalVouchers: monthlyPersonalVouchers,
+  });
+  const historicalMoneyComposition = getMoneyCompositionChartData({
+    income: historicalIncome,
+    expenses: historicalExpenses,
+    withdrawals: historicalWithdrawals,
+    personalVouchers: historicalPersonalVouchers,
+  });
+  const monthlyServiceContribution = getServiceContributionChartData(transactions, year, month);
+  const historicalServiceContribution = getServiceContributionChartData(transactions);
   const categoryExpenseData = getExpensesByCategoryChartData(transactions, year, month);
   const historicalCategoryExpenseData = getExpensesByCategoryChartData(transactions);
   const servicesByCountData = getServicesByCountChartData(transactions);
@@ -245,6 +261,24 @@ export function DashboardPlaceholder() {
                 valueLabel="Después de salario"
               />
             </div>
+            <MetricDonutCard
+              currency
+              emptyMessage="¡Bienvenida a un nuevo mes! Empieza registrando tu primera venta."
+              segments={monthlyMoneyComposition.segments}
+              subtitle="Ventas repartidas entre gastos, salario y ganancia"
+              title="Composición del dinero del mes"
+              totalLabel="Ventas"
+              totalValue={monthlyMoneyComposition.total}
+            />
+            <MetricDonutCard
+              currency
+              emptyMessage="Registra ventas para ver cuánto aporta cada servicio."
+              segments={monthlyServiceContribution.segments}
+              subtitle="Porcentaje de ventas por servicio"
+              title="Aporte por servicio del mes"
+              totalLabel="Ventas"
+              totalValue={monthlyServiceContribution.total}
+            />
             <DashboardChartCard
               data={weeklyChartData}
               onRegisterIncome={() => openRegister("income")}
@@ -377,6 +411,24 @@ export function DashboardPlaceholder() {
                 valueLabel="Después de salario"
               />
             </div>
+            <MetricDonutCard
+              currency
+              emptyMessage="Aún no hay ventas históricas para componer."
+              segments={historicalMoneyComposition.segments}
+              subtitle="Desde el primer registro"
+              title="Composición histórica del dinero"
+              totalLabel="Ventas"
+              totalValue={historicalMoneyComposition.total}
+            />
+            <MetricDonutCard
+              currency
+              emptyMessage="Aún no hay ventas históricas por servicio."
+              segments={historicalServiceContribution.segments}
+              subtitle="Porcentaje de ventas por servicio"
+              title="Aporte histórico por servicio"
+              totalLabel="Ventas"
+              totalValue={historicalServiceContribution.total}
+            />
             <ExpensesByCategoryChart data={historicalCategoryExpenseData} />
             <TopServicesChart data={servicesByCountData} metric="count" />
             <TopServicesChart data={servicesByRevenueData} metric="revenue" />

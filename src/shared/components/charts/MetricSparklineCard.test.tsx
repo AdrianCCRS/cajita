@@ -76,6 +76,10 @@ describe("MetricSparklineCard", () => {
     expect(container.firstElementChild).toHaveClass("metric-sparkline-card--expense");
   });
 
+  it("usa un color propio para ganancia despues de salario", () => {
+    expect(getMetricSparklineColor("profit")).toBe("var(--profit)");
+  });
+
   it("no rompe si faltan props opcionales", () => {
     render(
       <MetricSparklineCard

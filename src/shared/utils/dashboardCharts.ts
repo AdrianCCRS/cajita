@@ -164,6 +164,36 @@ export type DashboardSparklinePoint = {
   value: number;
 };
 
+export type MoneyCompositionChartData = {
+  total: number;
+  segments: Array<{
+    label: string;
+    value: number;
+    type: "expense" | "withdrawal" | "personal_voucher" | "profit";
+  }>;
+  hasData: boolean;
+};
+
+export type ServiceContributionChartData = {
+  total: number;
+  segments: Array<{
+    label: string;
+    value: number;
+    color: string;
+  }>;
+  hasData: boolean;
+};
+
+const serviceContributionColors = [
+  "oklch(0.57 0.13 158)",
+  "oklch(0.52 0.12 205)",
+  "oklch(0.53 0.14 285)",
+  "oklch(0.55 0.15 325)",
+  "oklch(0.55 0.15 55)",
+  "oklch(0.52 0.17 25)",
+  "oklch(0.58 0.12 120)",
+];
+
 export function getDailyIncomeChartData(
   transactions: Transaction[],
   year: number,
@@ -274,6 +304,71 @@ export function getHistoricalMonthlyMetricSparklineData(
   }
 
   return points;
+}
+
+export function getMoneyCompositionChartData({
+  income,
+  expenses,
+  withdrawals,
+  personalVouchers,
+}: {
+  income: number;
+  expenses: number;
+  withdrawals: number;
+  personalVouchers: number;
+}): MoneyCompositionChartData {
+  const profit = income - expenses - withdrawals - personalVouchers;
+  const segments = [
+    { label: "Gastos del negocio", value: expenses, type: "expense" as const },
+    { label: "Salario pagado", value: withdrawals, type: "withdrawal" as const },
+    { label: "Vales personales", value: personalVouchers, type: "personal_voucher" as const },
+    { label: "Ganancia después de salario", value: Math.max(profit, 0), type: "profit" as const },
+  ].filter((segment) => segment.value > 0);
+
+  return {
+    total: income,
+    segments,
+    hasData: income > 0 && segments.length > 0,
+  };
+}
+
+export function getServiceContributionChartData(
+  transactions: Transaction[],
+  year?: number,
+  month?: number,
+): ServiceContributionChartData {
+  const services = new Map<string, number>();
+
+  transactions
+    .filter(
+      (transaction) =>
+        transaction.type === "income" &&
+        transaction.serviceName &&
+        isInPeriod(transaction, year, month),
+    )
+    .forEach((transaction) => {
+      const name = transaction.serviceName!;
+      services.set(name, (services.get(name) ?? 0) + transaction.amount);
+    });
+
+  const sorted = [...services.entries()].sort(([, a], [, b]) => b - a);
+  const mainServices = sorted.slice(0, 6);
+  const otherTotal = sorted.slice(6).reduce((total, [, value]) => total + value, 0);
+  const visibleServices = otherTotal > 0
+    ? [...mainServices, ["Otros servicios", otherTotal] as const]
+    : mainServices;
+
+  const total = sorted.reduce((sum, [, value]) => sum + value, 0);
+
+  return {
+    total,
+    segments: visibleServices.map(([label, value], index) => ({
+      label,
+      value,
+      color: serviceContributionColors[index % serviceContributionColors.length],
+    })),
+    hasData: total > 0,
+  };
 }
 
 function getMetricTransactionValue(

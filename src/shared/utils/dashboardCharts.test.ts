@@ -4,7 +4,9 @@ import {
   getDailyIncomeChartData,
   getExpensesByCategoryChartData,
   getHistoricalMonthlyMetricSparklineData,
+  getMoneyCompositionChartData,
   getMonthlyMetricSparklineData,
+  getServiceContributionChartData,
   getServicesByCountChartData,
   getServicesByRevenueChartData,
   getWeeklyIncomeExpenseChartData,
@@ -371,5 +373,81 @@ describe("getHistoricalMonthlyMetricSparklineData", () => {
     );
 
     expect(result).toEqual([{ label: "03/26", value: 50000 }]);
+  });
+});
+
+describe("getMoneyCompositionChartData", () => {
+  it("separa gastos, salario, vales y ganancia despues de salario", () => {
+    const result = getMoneyCompositionChartData({
+      income: 200000,
+      expenses: 40000,
+      withdrawals: 50000,
+      personalVouchers: 20000,
+    });
+
+    expect(result.total).toBe(200000);
+    expect(result.hasData).toBe(true);
+    expect(result.segments).toEqual([
+      { label: "Gastos del negocio", value: 40000, type: "expense" },
+      { label: "Salario pagado", value: 50000, type: "withdrawal" },
+      { label: "Vales personales", value: 20000, type: "personal_voucher" },
+      { label: "Ganancia después de salario", value: 90000, type: "profit" },
+    ]);
+  });
+
+  it("no crea segmento negativo cuando la ganancia despues de salario esta en rojo", () => {
+    const result = getMoneyCompositionChartData({
+      income: 100000,
+      expenses: 70000,
+      withdrawals: 50000,
+      personalVouchers: 10000,
+    });
+
+    expect(result.segments).toEqual([
+      { label: "Gastos del negocio", value: 70000, type: "expense" },
+      { label: "Salario pagado", value: 50000, type: "withdrawal" },
+      { label: "Vales personales", value: 10000, type: "personal_voucher" },
+    ]);
+  });
+});
+
+describe("getServiceContributionChartData", () => {
+  it("agrupa ventas por servicio y calcula el total del periodo", () => {
+    const result = getServiceContributionChartData(
+      [
+        transaction({ id: "s1", type: "income", amount: 35000, date: "2026-06-01", serviceName: "Manicura" }),
+        transaction({ id: "s2", type: "income", amount: 65000, date: "2026-06-02", serviceName: "Manicura" }),
+        transaction({ id: "s3", type: "income", amount: 100000, date: "2026-06-03", serviceName: "Cabello" }),
+        transaction({ id: "e1", type: "expense", amount: 50000, date: "2026-06-03", categoryName: "Insumos" }),
+      ],
+      2026,
+      6,
+    );
+
+    expect(result.total).toBe(200000);
+    expect(result.hasData).toBe(true);
+    expect(result.segments.map((segment) => [segment.label, segment.value])).toEqual([
+      ["Manicura", 100000],
+      ["Cabello", 100000],
+    ]);
+  });
+
+  it("agrupa servicios pequenos como otros para mantener legible el donut", () => {
+    const result = getServiceContributionChartData([
+      transaction({ id: "s1", type: "income", amount: 100, date: "2026-06-01", serviceName: "Servicio 1" }),
+      transaction({ id: "s2", type: "income", amount: 90, date: "2026-06-01", serviceName: "Servicio 2" }),
+      transaction({ id: "s3", type: "income", amount: 80, date: "2026-06-01", serviceName: "Servicio 3" }),
+      transaction({ id: "s4", type: "income", amount: 70, date: "2026-06-01", serviceName: "Servicio 4" }),
+      transaction({ id: "s5", type: "income", amount: 60, date: "2026-06-01", serviceName: "Servicio 5" }),
+      transaction({ id: "s6", type: "income", amount: 50, date: "2026-06-01", serviceName: "Servicio 6" }),
+      transaction({ id: "s7", type: "income", amount: 40, date: "2026-06-01", serviceName: "Servicio 7" }),
+      transaction({ id: "s8", type: "income", amount: 30, date: "2026-06-01", serviceName: "Servicio 8" }),
+    ]);
+
+    expect(result.segments).toHaveLength(7);
+    expect(result.segments[result.segments.length - 1]).toMatchObject({
+      label: "Otros servicios",
+      value: 70,
+    });
   });
 });

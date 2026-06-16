@@ -42,6 +42,8 @@
   --warning: oklch(0.72 0.16 78);
   --vales: oklch(0.55 0.15 325);
   --vales-soft: oklch(0.95 0.03 325);
+  --profit: oklch(87.806% 0.23595 132.332);
+  --profit-soft: oklch(0.95 0.06 132);
 
   --shadow: 0 16px 44px oklch(0.28 0.04 170 / 0.1);
 }
@@ -75,6 +77,8 @@
   --warning: oklch(0.82 0.15 78);
   --vales: oklch(0.75 0.13 325);
   --vales-soft: oklch(0.28 0.055 325);
+  --profit: oklch(0.86 0.18 132);
+  --profit-soft: oklch(0.28 0.075 132);
   --shadow: 0 18px 48px oklch(0 0 0 / 0.36);
 }
 
@@ -476,9 +480,83 @@ h3 {
   border-left: 5px solid var(--vales);
 }
 
-.metric-sparkline-card--profit,
 .metric-sparkline-card--business {
   border-left: 5px solid var(--business);
+}
+
+.metric-sparkline-card--profit {
+  border-left: 5px solid var(--profit);
+}
+
+.metric-donut-card {
+  box-shadow: none;
+}
+
+.metric-donut-card__body {
+  display: grid;
+  gap: 14px;
+}
+
+.metric-donut-card__content {
+  display: grid;
+  gap: 12px;
+}
+
+.metric-donut-card__chart {
+  width: 100%;
+  min-width: 0;
+  height: 220px;
+}
+
+.metric-donut-card__legend {
+  display: grid;
+  gap: 8px;
+}
+
+.metric-donut-card__legend-item {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  padding: 9px 10px;
+}
+
+.metric-donut-card__legend-item span:not(.metric-donut-card__dot) {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+  min-width: 0;
+}
+
+.metric-donut-card__legend-item b {
+  color: var(--foreground);
+  font-size: 0.88rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.metric-donut-card__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.metric-donut-card__empty {
+  display: grid;
+  min-height: 160px;
+  margin: 0;
+  align-items: center;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.45;
+  padding: 14px;
 }
 
 .btn-business {
@@ -569,6 +647,10 @@ h3 {
 
 .metric-card--salary {
   border-left: 5px solid var(--salary);
+}
+
+.metric-card--profit {
+  border-left: 5px solid var(--profit);
 }
 
 .metric-card--vale {
@@ -1882,6 +1964,11 @@ h3 {
 
   .dashboard-kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metric-donut-card__content {
+    align-items: center;
+    grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.1fr);
   }
 
   .summary-metrics {
