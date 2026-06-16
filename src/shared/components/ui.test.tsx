@@ -45,7 +45,7 @@ describe("MetricCard", () => {
 
   it("aplica clase de tono correcta", () => {
     const { container } = render(<MetricCard title="Ganancia" value="$200.000" tone="profit" />);
-    expect(container.querySelector(".metric-card--vale")).toBeTruthy();
+    expect(container.querySelector(".metric-card--profit")).toBeTruthy();
   });
 });
 
