@@ -1,11 +1,14 @@
 import { BadgeDollarSign, Calculator, FlaskConical, Package, Pencil, Plus, Power, RotateCcw, Scissors, Trash2 } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
+import Chart from "react-apexcharts";
+import type { ApexOptions } from "apexcharts";
 import { Table } from "@heroui/react";
 import { BottomSheet, Button, Card, EmptyState, Input, Label, MoneyField, ScreenHero, Tabs, TextField } from "../../shared/components/ui";
 import { useSpaData } from "../../shared/data/SpaDataContext";
 import type { MeasurementType, PurchaseUnit, RawMaterial, Service, ServiceMaterial } from "../../shared/types/domain";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
 import { getServiceMargin } from "../../shared/utils/financials";
+import { getRawMaterialsByCostContribution, getRawMaterialsByServiceCount } from "../../shared/utils/rawMaterialsCharts";
 import { buildRawMaterialCalculation, getPurchaseUnits } from "../../shared/utils/rawMaterials";
 import { rawMaterialSchema, serviceMaterialSchema, serviceSchema } from "../../shared/validation/schemas";
 
@@ -87,6 +90,14 @@ export function ServicesPlaceholder() {
       return matchesQuery && matchesStatus;
     });
   }, [materialQuery, materialStatusFilter, rawMaterials]);
+  const costContributionData = useMemo(
+    () => getRawMaterialsByCostContribution(serviceMaterialsByServiceId, rawMaterials),
+    [serviceMaterialsByServiceId, rawMaterials],
+  );
+  const usageCountData = useMemo(
+    () => getRawMaterialsByServiceCount(serviceMaterialsByServiceId, rawMaterials),
+    [serviceMaterialsByServiceId, rawMaterials],
+  );
   const currentServiceMaterials = selectedService ? serviceMaterialsByServiceId[selectedService.id] ?? [] : [];
   const currentServiceMaterialsTotal = currentServiceMaterials.reduce((total, material) => total + material.totalCost, 0);
   const selectedRawMaterial = activeRawMaterials.find((material) => material.id === selectedRawMaterialId);
@@ -552,6 +563,74 @@ export function ServicesPlaceholder() {
               onAction={openCreateRawMaterialSheet}
             />
           )}
+
+          {costContributionData.hasData ? (
+            <Card className="ui-card wide-card dashboard-chart-card">
+              <Card.Content>
+                <div className="section-heading">
+                  <div className="section-subheading">
+                    <span>Costo total por insumo en servicios</span>
+                    <strong>Insumos que más aportan al costo</strong>
+                  </div>
+                </div>
+                <div
+                  aria-label="Gráfica de insumos que más aportan al costo"
+                  className="dashboard-chart"
+                  style={{ minHeight: Math.max(costContributionData.labels.length * 44, 200) }}
+                >
+                  <Chart
+                    height="100%"
+                    options={materialsBarOptions(costContributionData, true)}
+                    series={[{ name: "Costo total", data: costContributionData.series }]}
+                    type="bar"
+                    width="100%"
+                  />
+                </div>
+              </Card.Content>
+            </Card>
+          ) : (
+            <Card className="ui-card wide-card">
+              <Card.Content>
+                <div className="chart-empty-state">
+                  <p>Asocia insumos a tus servicios para ver cuáles aportan más al costo.</p>
+                </div>
+              </Card.Content>
+            </Card>
+          )}
+
+          {usageCountData.hasData ? (
+            <Card className="ui-card wide-card dashboard-chart-card">
+              <Card.Content>
+                <div className="section-heading">
+                  <div className="section-subheading">
+                    <span>Cantidad de servicios por insumo</span>
+                    <strong>Insumos más usados</strong>
+                  </div>
+                </div>
+                <div
+                  aria-label="Gráfica de insumos más usados en servicios"
+                  className="dashboard-chart"
+                  style={{ minHeight: Math.max(usageCountData.labels.length * 44, 200) }}
+                >
+                  <Chart
+                    height="100%"
+                    options={materialsBarOptions(usageCountData, false)}
+                    series={[{ name: "Servicios", data: usageCountData.series }]}
+                    type="bar"
+                    width="100%"
+                  />
+                </div>
+              </Card.Content>
+            </Card>
+          ) : (
+            <Card className="ui-card wide-card">
+              <Card.Content>
+                <div className="chart-empty-state">
+                  <p>Asocia insumos a tus servicios para ver cuáles usas con más frecuencia.</p>
+                </div>
+              </Card.Content>
+            </Card>
+          )}
         </>
       )}
 
@@ -865,4 +944,88 @@ function MaterialRow({ material, onDelete }: { material: ServiceMaterial; onDele
 
 function formatQuantity(value: number, unit: string) {
   return `${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 }).format(value)} ${unitLabels[unit as PurchaseUnit] ?? unit}`;
+}
+
+const materialsBarPalette = [
+  "oklch(0.72 0.16 78)",
+  "oklch(0.62 0.18 45)",
+  "oklch(0.52 0.17 25)",
+  "oklch(0.55 0.15 325)",
+  "oklch(0.53 0.14 285)",
+  "oklch(0.52 0.12 205)",
+  "oklch(0.57 0.13 158)",
+];
+
+function materialsBarOptions(
+  data: { labels: string[]; series: number[] },
+  isCurrency: boolean,
+): ApexOptions {
+  return {
+    chart: {
+      fontFamily: "inherit",
+      parentHeightOffset: 0,
+      toolbar: { show: false },
+      zoom: { enabled: false },
+    },
+    colors: [
+      ({ dataPointIndex }: { dataPointIndex: number }) =>
+        materialsBarPalette[dataPointIndex % materialsBarPalette.length] ?? "var(--salary)",
+    ],
+    dataLabels: { enabled: false },
+    grid: {
+      borderColor: "var(--line)",
+      strokeDashArray: 4,
+      xaxis: { lines: { show: false } },
+      yaxis: { lines: { show: true } },
+    },
+    legend: { show: false },
+    plotOptions: {
+      bar: {
+        borderRadius: 5,
+        horizontal: true,
+        barHeight: "60%",
+        distributed: true,
+        dataLabels: { position: "top" },
+      },
+    },
+    states: {
+      hover: { filter: { type: "lighten" } },
+    },
+    tooltip: {
+      y: {
+        formatter: (value) =>
+          isCurrency ? formatCurrency(value) : String(Math.round(Number(value))),
+      },
+    },
+    xaxis: {
+      categories: data.labels,
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+      labels: {
+        formatter: (value) =>
+          isCurrency ? formatShortMaterialsCurrency(Number(value)) : String(Math.round(Number(value))),
+        style: {
+          colors: "var(--muted)",
+          fontSize: "12px",
+          fontWeight: 800,
+        },
+      },
+    },
+    yaxis: {
+      labels: {
+        formatter: (value) => String(value),
+        style: {
+          colors: "var(--foreground)",
+          fontSize: "13px",
+          fontWeight: 700,
+        },
+      },
+    },
+  };
+}
+
+function formatShortMaterialsCurrency(value: number) {
+  if (Math.abs(value) >= 1000000) return `${Math.round(value / 1000000)}M`;
+  if (Math.abs(value) >= 1000) return `${Math.round(value / 1000)}K`;
+  return String(Math.round(value));
 }

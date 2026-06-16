@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { ReceiptText, Tags } from "lucide-react";
+import { CalendarCheck2, CalendarClock, ReceiptText, Tags } from "lucide-react";
 import { Button, Card, HelpDrawer, ProgressBar, ScreenHero, Tabs } from "../../shared/components/ui";
 import { useSpaData } from "../../shared/data/SpaDataContext";
 import type { Transaction, TransactionType } from "../../shared/types/domain";
@@ -100,6 +100,9 @@ export function DashboardPlaceholder() {
   const monthlyFixedCommitments = getTotalFixedExpenses(fixedExpenses);
   const monthlyFixedPayments = getMonthlyFixedExpensePayments(transactions, year, month);
   const pendingFixedPayments = getPendingFixedExpensesForMonth(fixedExpenses, transactions, year, month);
+  const fixedPaymentProgress = monthlyFixedCommitments > 0
+    ? (monthlyFixedPayments / monthlyFixedCommitments) * 100
+    : 0;
   const ownerTotalReceived = getOwnerTotalReceived(monthlyWithdrawals, monthlyPersonalVouchers);
   const todayIncome = transactions
     .filter((transaction) => transaction.type === "income" && isToday(transaction.date))
@@ -119,7 +122,19 @@ export function DashboardPlaceholder() {
   const salaryPending = getOwnerSalaryPending(financialSettings.salaryTarget, monthlyWithdrawals, monthlyPersonalVouchers);
   const breakEven = getBreakEvenPoint(fixedExpenses, transactions);
   const breakEvenProgress = breakEven ? getBreakEvenProgress(monthlyIncome, breakEven) : 0;
+  const breakEvenGaugeColor =
+    breakEvenProgress >= 100 ? "var(--profit)" :
+    breakEvenProgress >= 75 ? "var(--income)" :
+    breakEvenProgress >= 50 ? "var(--salary)" :
+    breakEvenProgress >= 25 ? "var(--bill)" :
+    "var(--expense)";
   const salaryProgress = getSalaryUsagePercentage(financialSettings.salaryTarget, ownerTotalReceived);
+  const salaryGaugeColor =
+    salaryProgress >= 100 ? "var(--danger)" :
+    salaryProgress >= 75 ? "var(--expense)" :
+    salaryProgress >= 50 ? "var(--bill)" :
+    salaryProgress >= 25 ? "var(--salary)" :
+    "var(--income)";
   const voucherSalaryShare = getSalaryUsagePercentage(financialSettings.salaryTarget, monthlyPersonalVouchers);
   const topPersonalVoucherCategory = groupPersonalVouchersByCategory(
     transactions.filter((transaction) => transaction.type === "personal_voucher" && isInCurrentMonth(transaction.date, year, month)),
@@ -274,22 +289,36 @@ export function DashboardPlaceholder() {
               data={weeklyChartData}
               onRegisterIncome={() => openRegister("income")}
             />
-            <Card className="ui-card wide-card">
-              <Card.Content>
+            <Card className="ui-card wide-card fixed-payments-card">
+              <Card.Content className="fixed-payments-card__content">
                 <div className="section-heading">
                   <div className="section-subheading">
                     <span>Pagos fijos del mes</span>
                     <strong>{formatCurrency(monthlyFixedCommitments)}</strong>
                   </div>
+                  <b>{Math.round(fixedPaymentProgress)}%</b>
                 </div>
-                <div className="summary-metrics">
-                  <div>
-                    <span>Ya registrados como gasto</span>
-                    <b>{formatCurrency(monthlyFixedPayments)}</b>
+                <div className="metric-gauge-card__visual">
+                  <MetricGaugeChart
+                    label="Pagos fijos"
+                    type="bill"
+                    value={fixedPaymentProgress}
+                  />
+                </div>
+                <div className="fixed-payments-grid">
+                  <div className="fixed-payments-metric fixed-payments-metric--paid">
+                    <CalendarCheck2 aria-hidden="true" size={20} />
+                    <div>
+                      <span>Registrado como gasto</span>
+                      <strong>{formatCurrency(monthlyFixedPayments)}</strong>
+                    </div>
                   </div>
-                  <div>
-                    <span>Pendientes por registrar</span>
-                    <b>{formatCurrency(pendingFixedPayments)}</b>
+                  <div className="fixed-payments-metric fixed-payments-metric--pending">
+                    <CalendarClock aria-hidden="true" size={20} />
+                    <div>
+                      <span>Pendiente por registrar</span>
+                      <strong>{formatCurrency(pendingFixedPayments)}</strong>
+                    </div>
                   </div>
                 </div>
                 <p className="hint-text">La meta mínima usa todos los pagos fijos. Los gastos reales solo suben cuando registras el pago.</p>
@@ -309,8 +338,8 @@ export function DashboardPlaceholder() {
                     <>
                       <div className="metric-gauge-card__visual">
                         <MetricGaugeChart
+                          color={breakEvenGaugeColor}
                           label="Meta mínima"
-                          type={breakEvenProgress >= 100 ? "profit" : "expense"}
                           value={breakEvenProgress}
                         />
                       </div>
@@ -340,8 +369,8 @@ export function DashboardPlaceholder() {
                   </div>
                   <div className="metric-gauge-card__visual">
                     <MetricGaugeChart
+                      color={salaryGaugeColor}
                       label="Salario"
-                      type="withdrawal"
                       value={salaryProgress}
                     />
                   </div>

@@ -9,7 +9,8 @@ export type MetricChartType =
   | "profit"
   | "withdrawal"
   | "personal_voucher"
-  | "business";
+  | "business"
+  | "bill";
 
 export type MetricSparklineType = MetricChartType;
 
@@ -39,6 +40,8 @@ export function getMetricChartColor(type: MetricChartType = "business") {
       return "var(--vales)";
     case "profit":
       return "var(--profit)";
+    case "bill":
+      return "var(--bill)";
     case "business":
     default:
       return "var(--business)";

@@ -44,6 +44,8 @@
   --vales-soft: oklch(0.95 0.03 325);
   --profit: oklch(87.806% 0.23595 132.332);
   --profit-soft: oklch(0.95 0.06 132);
+  --bill: oklch(0.62 0.18 45);
+  --bill-soft: oklch(0.95 0.04 45);
 
   --shadow: 0 16px 44px oklch(0.28 0.04 170 / 0.1);
 }
@@ -79,6 +81,8 @@
   --vales-soft: oklch(0.28 0.055 325);
   --profit: oklch(0.86 0.18 132);
   --profit-soft: oklch(0.28 0.075 132);
+  --bill: oklch(0.74 0.17 45);
+  --bill-soft: oklch(0.28 0.06 45);
   --shadow: 0 18px 48px oklch(0 0 0 / 0.36);
 }
 
@@ -642,6 +646,85 @@ h3 {
   min-width: 4px;
   border-radius: inherit;
   background: var(--vales);
+}
+
+.fixed-payments-card__content {
+  display: grid;
+  gap: 12px;
+}
+
+.fixed-payments-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.fixed-payments-metric {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--surface-soft);
+}
+
+.fixed-payments-metric svg {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  padding: 9px;
+}
+
+.fixed-payments-metric--paid {
+  background: var(--bill-soft);
+}
+
+.fixed-payments-metric--paid svg {
+  background: color-mix(in srgb, var(--bill) 16%, var(--surface));
+  color: var(--bill);
+}
+
+.fixed-payments-metric--pending {
+  background: var(--expense-soft);
+}
+
+.fixed-payments-metric--pending svg {
+  background: color-mix(in srgb, var(--expense) 16%, var(--surface));
+  color: var(--expense);
+}
+
+.fixed-payments-metric span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.fixed-payments-metric strong {
+  display: block;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+  color: var(--foreground);
+  font-size: 1rem;
+  line-height: 1.15;
+}
+
+.fixed-payments-progress {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--expense-soft);
+}
+
+.fixed-payments-progress span {
+  display: block;
+  height: 100%;
+  min-width: 4px;
+  border-radius: inherit;
+  background: var(--bill);
 }
 
 .btn-business {

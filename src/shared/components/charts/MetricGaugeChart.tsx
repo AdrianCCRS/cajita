@@ -11,6 +11,8 @@ export type MetricGaugeChartProps = {
   label: string;
   value: number;
   type?: MetricChartType;
+  color?: string;
+  trackColor?: string;
   maxValue?: number;
   className?: string;
 };
@@ -19,12 +21,15 @@ export function MetricGaugeChart({
   label,
   value,
   type = "business",
+  color: colorOverride,
+  trackColor: trackColorOverride,
   maxValue = 100,
   className,
 }: MetricGaugeChartProps) {
   const normalizedValue = Math.max(0, Math.min(value, maxValue));
   const percentage = maxValue > 0 ? Math.round((normalizedValue / maxValue) * 100) : 0;
-  const color = getMetricChartColor(type);
+  const color = colorOverride ?? getMetricChartColor(type);
+  const trackColor = trackColorOverride ?? (type === "bill" ? "var(--expense-soft)" : "var(--line)");
   const series = useMemo(() => [percentage], [percentage]);
   const options = useMemo<ApexOptions>(
     () => ({
@@ -53,7 +58,7 @@ export function MetricGaugeChart({
           },
           startAngle: -135,
           track: {
-            background: "var(--line)",
+            background: trackColor,
             strokeWidth: "92%",
           },
           dataLabels: {
@@ -86,7 +91,7 @@ export function MetricGaugeChart({
         },
       },
     }),
-    [color, label],
+    [color, label, trackColor],
   );
 
   return (

@@ -35,6 +35,7 @@ describe("DashboardPlaceholder", () => {
         transaction({ id: "income-1", type: "income", amount: 200000, date: "2026-06-15", serviceName: "Manicura", priceAtTime: 200000, costAtTime: 50000 }),
         transaction({ id: "income-2", type: "income", amount: 100000, date: "2026-06-16", serviceName: "Cabello", priceAtTime: 100000, costAtTime: 25000 }),
         transaction({ id: "expense-1", type: "expense", amount: 40000, date: "2026-06-15", categoryName: "Insumos" }),
+        transaction({ id: "fixed-payment-1", type: "expense", amount: 100000, date: "2026-06-05", categoryName: "Arriendo", expenseType: "fixed", fixedExpenseId: "fixed-1", fixedExpenseName: "Arriendo" }),
         transaction({ id: "withdrawal-1", type: "withdrawal", amount: 50000, date: "2026-06-15" }),
         transaction({ id: "voucher-1", type: "personal_voucher", amount: 20000, date: "2026-06-15", personalCategoryId: "food", personalCategoryName: "Alimentación" }),
       ],
@@ -62,6 +63,10 @@ describe("DashboardPlaceholder", () => {
     expect(screen.getByText("Categoría con más vales")).toBeInTheDocument();
     expect(screen.getByText("Alimentación")).toBeInTheDocument();
     expect(screen.getByText(/\$\s*20\.000 · 100% de tus vales/)).toBeInTheDocument();
+    expect(screen.getByText("Pagos fijos del mes")).toBeInTheDocument();
+    expect(screen.getByText("Registrado como gasto")).toBeInTheDocument();
+    expect(screen.getByText("Pendiente por registrar")).toBeInTheDocument();
+    expect(screen.getByLabelText("Pagos fijos: 20%")).toBeInTheDocument();
     expect(screen.getAllByTestId("ApexChart").some((chart) => chart.getAttribute("data-chart-type") === "donut")).toBe(true);
     expect(screen.getByLabelText("Meta mínima: 45%")).toBeInTheDocument();
     expect(screen.getByLabelText("Salario: 4%")).toBeInTheDocument();
