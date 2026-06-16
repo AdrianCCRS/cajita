@@ -1,4 +1,4 @@
-import { Banknote, CircleDollarSign, HandCoins, Home, ListChecks, Package, Receipt, Scissors, Settings, UserRound, X } from "lucide-react";
+import { Banknote, CircleDollarSign, HandCoins, Home, ListChecks, Moon, Package, Receipt, Scissors, Settings, UserRound, X } from "lucide-react";
 import { useMemo, useState, type FormEvent, type Key } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../shared/auth/AuthContext";
@@ -8,7 +8,7 @@ import { formatCurrency } from "../shared/utils/formatCurrency";
 import { getEstimatedProfit, getMonthlyExpenses, getMonthlyIncome, getMonthlyPersonalVouchers, getMonthlyWithdrawals } from "../shared/utils/financials";
 import { transactionSchema } from "../shared/validation/schemas";
 import { BottomSheet, Button, Card, Label, MoneyField, SkeletonCard, TextArea, TextField, ToastRegion } from "../shared/components/ui";
-import { Avatar, Dropdown } from "@heroui/react";
+import { Avatar, Dropdown, Switch } from "@heroui/react";
 import { ArrowRightFromSquare } from "@gravity-ui/icons";
 
 const navItems = [
@@ -31,7 +31,8 @@ export function AppShell() {
   const [toast, setToast] = useState<Toast | null>(null);
   const navigate = useNavigate();
   const { isFirebaseEnabled, signOut, user } = useAuth();
-  const { business, isLoading, error } = useSpaData();
+  const { business, isLoading, error, uiSettings, updateThemeMode } = useSpaData();
+  const isDarkMode = uiSettings.themeMode === "dark";
 
   function openRegister(type: TransactionType) {
     setInitialType(type);
@@ -52,6 +53,16 @@ export function AppShell() {
     const selectedItem = navItems.find((item) => item.id === key);
     if (selectedItem) {
       navigate(selectedItem.to);
+    }
+  }
+
+  async function handleThemeModeChange(isSelected: boolean) {
+    const nextMode = isSelected ? "dark" : "light";
+    try {
+      await updateThemeMode(nextMode);
+      showToast({ kind: "success", message: "Tema actualizado." });
+    } catch {
+      showToast({ kind: "error", message: "No pudimos guardar el tema. Intenta nuevamente." });
     }
   }
 
@@ -81,6 +92,22 @@ export function AppShell() {
                       <p className="text-xs leading-none text-muted">{user?.email ?? "Sin correo disponible"}</p>
                     </div>
                   </div>
+                </div>
+                <div className="dropdown-theme-row">
+                  <div className="dropdown-theme-row__label">
+                    <Moon aria-hidden="true" size={16} />
+                    <span>Modo oscuro</span>
+                  </div>
+                  <Switch
+                    aria-label="Modo oscuro"
+                    isSelected={isDarkMode}
+                    size="sm"
+                    onChange={handleThemeModeChange}
+                  >
+                    <Switch.Control>
+                      <Switch.Thumb />
+                    </Switch.Control>
+                  </Switch>
                 </div>
                 <Dropdown.Menu onAction={handleMenuAction}>
                   {navItems.map((item) => (

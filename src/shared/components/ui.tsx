@@ -164,6 +164,10 @@ type BottomSheetProps = {
 export function BottomSheet({ isOpen, title, eyebrow, children, footer, onClose }: BottomSheetProps) {
   return (
     <Drawer>
+      <Drawer.Trigger
+        aria-hidden="true"
+        className="overlay-hidden-trigger"
+      />
       <Drawer.Backdrop
         isOpen={isOpen}
         onOpenChange={(open) => {
@@ -176,7 +180,7 @@ export function BottomSheet({ isOpen, title, eyebrow, children, footer, onClose 
             <Drawer.Header className="sheet-title">
               <Drawer.Heading>
                 {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
-                <h2>{title}</h2>
+                <span className="sheet-title__text">{title}</span>
               </Drawer.Heading>
             </Drawer.Header>
             <Drawer.Body>{children}</Drawer.Body>
@@ -200,6 +204,11 @@ type ConfirmDialogProps = {
 export function ConfirmDialog({ isOpen, title, message, confirmLabel = "Eliminar", onCancel, onConfirm }: ConfirmDialogProps) {
   return (
     <Modal>
+      <Modal.Trigger
+        aria-hidden="true"
+        className="overlay-hidden-trigger"
+        tabIndex={-1}
+      />
       <Modal.Backdrop
         isOpen={isOpen}
         onOpenChange={(open) => {
