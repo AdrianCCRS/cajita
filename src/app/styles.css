@@ -576,6 +576,74 @@ h3 {
   height: 170px;
 }
 
+.personal-voucher-card__content {
+  display: grid;
+  gap: 12px;
+}
+
+.voucher-summary-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.voucher-highlight,
+.voucher-category {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--vales-soft);
+}
+
+.voucher-highlight svg,
+.voucher-category svg {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  padding: 9px;
+  background: color-mix(in srgb, var(--vales) 16%, var(--surface));
+  color: var(--vales);
+}
+
+.voucher-highlight span,
+.voucher-category span,
+.voucher-category small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.voucher-highlight strong,
+.voucher-category strong {
+  display: block;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+  color: var(--foreground);
+  font-size: 1rem;
+  line-height: 1.15;
+}
+
+.voucher-progress {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+}
+
+.voucher-progress span {
+  display: block;
+  height: 100%;
+  min-width: 4px;
+  border-radius: inherit;
+  background: var(--vales);
+}
+
 .btn-business {
   border-color: var(--business);
   background-color: var(--app-accent-soft);

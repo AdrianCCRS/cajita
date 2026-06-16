@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import { ReceiptText, Tags } from "lucide-react";
 import { Button, Card, HelpDrawer, ProgressBar, ScreenHero, Tabs } from "../../shared/components/ui";
 import { useSpaData } from "../../shared/data/SpaDataContext";
 import type { Transaction, TransactionType } from "../../shared/types/domain";
@@ -10,8 +11,6 @@ import {
   getMoneyCompositionChartData,
   getMonthlyMetricSparklineData,
   getServiceContributionChartData,
-  getServicesByCountChartData,
-  getServicesByRevenueChartData,
   getWeeklyIncomeExpenseChartData,
 } from "../../shared/utils/dashboardCharts";
 import { isToday } from "../../shared/utils/dates";
@@ -34,7 +33,6 @@ import {
 import { DailyIncomeTrendChart } from "./DailyIncomeTrendChart";
 import { DashboardChartCard } from "./DashboardChartCard";
 import { ExpensesByCategoryChart } from "./ExpensesByCategoryChart";
-import { TopServicesChart } from "./TopServicesChart";
 import { MetricDonutCard, MetricGaugeChart, MetricSparklineCard } from "../../shared/components/charts";
 type DashboardHelpKey = "income" | "expense" | "business" | "salary" | "profit" | "breakEven";
 type DashboardTab = "today" | "month" | "history";
@@ -116,9 +114,13 @@ export function DashboardPlaceholder() {
   const breakEven = getBreakEvenPoint(fixedExpenses, transactions);
   const breakEvenProgress = breakEven ? getBreakEvenProgress(monthlyIncome, breakEven) : 0;
   const salaryProgress = getSalaryUsagePercentage(financialSettings.salaryTarget, ownerTotalReceived);
+  const voucherSalaryShare = getSalaryUsagePercentage(financialSettings.salaryTarget, monthlyPersonalVouchers);
   const topPersonalVoucherCategory = groupPersonalVouchersByCategory(
     transactions.filter((transaction) => transaction.type === "personal_voucher" && isInCurrentMonth(transaction.date, year, month)),
   )[0];
+  const topPersonalVoucherShare = monthlyPersonalVouchers > 0 && topPersonalVoucherCategory
+    ? (topPersonalVoucherCategory.total / monthlyPersonalVouchers) * 100
+    : 0;
   const weeklyChartData = getWeeklyIncomeExpenseChartData(transactions, year, month);
   const dailyIncomeData = getDailyIncomeChartData(transactions, year, month);
   const monthlyIncomeSparklineData = getMonthlyMetricSparklineData(transactions, year, month, "income");
@@ -130,12 +132,6 @@ export function DashboardPlaceholder() {
   const historicalExpensesSparklineData = getHistoricalMonthlyMetricSparklineData(transactions, "expense");
   const historicalBusinessSparklineData = getHistoricalMonthlyMetricSparklineData(transactions, "business");
   const historicalProfitSparklineData = getHistoricalMonthlyMetricSparklineData(transactions, "profit");
-  const monthlyMoneyComposition = getMoneyCompositionChartData({
-    income: monthlyIncome,
-    expenses: monthlyExpenses,
-    withdrawals: monthlyWithdrawals,
-    personalVouchers: monthlyPersonalVouchers,
-  });
   const historicalMoneyComposition = getMoneyCompositionChartData({
     income: historicalIncome,
     expenses: historicalExpenses,
@@ -146,8 +142,6 @@ export function DashboardPlaceholder() {
   const historicalServiceContribution = getServiceContributionChartData(transactions);
   const categoryExpenseData = getExpensesByCategoryChartData(transactions, year, month);
   const historicalCategoryExpenseData = getExpensesByCategoryChartData(transactions);
-  const servicesByCountData = getServicesByCountChartData(transactions);
-  const servicesByRevenueData = getServicesByRevenueChartData(transactions);
   const selectedHelp = helpKey ? helpContent[helpKey] : null;
   const summary = getDashboardSummary({
     activeTab,
@@ -263,15 +257,6 @@ export function DashboardPlaceholder() {
             </div>
             <MetricDonutCard
               currency
-              emptyMessage="¡Bienvenida a un nuevo mes! Empieza registrando tu primera venta."
-              segments={monthlyMoneyComposition.segments}
-              subtitle="Ventas repartidas entre gastos, salario y ganancia"
-              title="Composición del dinero del mes"
-              totalLabel="Ventas"
-              totalValue={monthlyMoneyComposition.total}
-            />
-            <MetricDonutCard
-              currency
               emptyMessage="Registra ventas para ver cuánto aporta cada servicio."
               segments={monthlyServiceContribution.segments}
               subtitle="Porcentaje de ventas por servicio"
@@ -368,25 +353,47 @@ export function DashboardPlaceholder() {
                 </div>
               </Card.Content>
             </Card>
-            <Card className="ui-card wide-card">
-              <Card.Content>
+            <Card className="ui-card wide-card personal-voucher-card">
+              <Card.Content className="personal-voucher-card__content">
                 <div className="section-heading">
                   <div className="section-subheading">
                     <span>Vales personales</span>
                     <strong>{formatCurrency(monthlyPersonalVouchers)}</strong>
                   </div>
                 </div>
-                <p>
-                  Este mes llevas {formatCurrency(monthlyPersonalVouchers)} en vales personales.
-                  {financialSettings.salaryTarget
-                    ? ` Eso equivale al ${Math.round(getSalaryUsagePercentage(financialSettings.salaryTarget, monthlyPersonalVouchers))}% de tu salario objetivo.`
-                    : ""}
-                </p>
-                <p>
-                  {topPersonalVoucherCategory
-                    ? `Categoría con más vales: ${topPersonalVoucherCategory.personalCategoryName}.`
-                    : "Registra un vale para ver tus gastos personales por categoría."}
-                </p>
+                <div className="voucher-summary-grid">
+                  <div className="voucher-highlight">
+                    <ReceiptText aria-hidden="true" size={20} />
+                    <div>
+                      <span>Parte de tu salario usada en vales</span>
+                      <strong>{financialSettings.salaryTarget ? `${Math.round(voucherSalaryShare)}%` : "Sin meta"}</strong>
+                    </div>
+                  </div>
+                  <div className="voucher-progress" aria-label={`Vales personales: ${Math.round(voucherSalaryShare)}% del salario`}>
+                    <span style={{ width: `${Math.min(voucherSalaryShare, 100)}%` }} />
+                  </div>
+                  <div className="voucher-category">
+                    <Tags aria-hidden="true" size={20} />
+                    {topPersonalVoucherCategory ? (
+                      <div>
+                        <span>Categoría con más vales</span>
+                        <strong>{topPersonalVoucherCategory.personalCategoryName}</strong>
+                        <small>
+                          {formatCurrency(topPersonalVoucherCategory.total)} · {Math.round(topPersonalVoucherShare)}% de tus vales
+                        </small>
+                      </div>
+                    ) : (
+                      <div>
+                        <span>Categoría con más vales</span>
+                        <strong>Sin datos todavía</strong>
+                        <small>Registra un vale para ver tus gastos personales por categoría.</small>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <Button className="btn-voucher" variant="secondary" onPress={() => openRegister("personal_voucher")}>
+                  Registrar vale
+                </Button>
               </Card.Content>
             </Card>
             <ExpensesByCategoryChart data={categoryExpenseData} />
@@ -448,8 +455,6 @@ export function DashboardPlaceholder() {
               totalValue={historicalServiceContribution.total}
             />
             <ExpensesByCategoryChart data={historicalCategoryExpenseData} />
-            <TopServicesChart data={servicesByCountData} metric="count" />
-            <TopServicesChart data={servicesByRevenueData} metric="revenue" />
           </>
         ) : null}
       </div>

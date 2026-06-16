@@ -29,14 +29,14 @@ function transaction(input: Pick<Transaction, "id" | "type" | "amount" | "date">
 }
 
 describe("DashboardPlaceholder", () => {
-  it("muestra composicion circular en la tab del mes", () => {
+  it("muestra aporte por servicio y gauges en la tab del mes", () => {
     spaDataMock.mockReturnValue({
       transactions: [
         transaction({ id: "income-1", type: "income", amount: 200000, date: "2026-06-15", serviceName: "Manicura", priceAtTime: 200000, costAtTime: 50000 }),
         transaction({ id: "income-2", type: "income", amount: 100000, date: "2026-06-16", serviceName: "Cabello", priceAtTime: 100000, costAtTime: 25000 }),
         transaction({ id: "expense-1", type: "expense", amount: 40000, date: "2026-06-15", categoryName: "Insumos" }),
         transaction({ id: "withdrawal-1", type: "withdrawal", amount: 50000, date: "2026-06-15" }),
-        transaction({ id: "voucher-1", type: "personal_voucher", amount: 20000, date: "2026-06-15", personalCategoryName: "Alimentación" }),
+        transaction({ id: "voucher-1", type: "personal_voucher", amount: 20000, date: "2026-06-15", personalCategoryId: "food", personalCategoryName: "Alimentación" }),
       ],
       fixedExpenses: [
         {
@@ -55,14 +55,13 @@ describe("DashboardPlaceholder", () => {
 
     render(<DashboardPlaceholder />);
 
-    expect(screen.getByText("Composición del dinero del mes")).toBeInTheDocument();
     expect(screen.getByText("Aporte por servicio del mes")).toBeInTheDocument();
     expect(screen.getAllByText("Manicura").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Cabello").length).toBeGreaterThan(0);
-    expect(screen.getByText("Gastos del negocio")).toBeInTheDocument();
-    expect(screen.getByText("Salario pagado")).toBeInTheDocument();
     expect(screen.getAllByText("Vales personales").length).toBeGreaterThan(0);
-    expect(screen.getByText("Ganancia después de salario")).toBeInTheDocument();
+    expect(screen.getByText("Categoría con más vales")).toBeInTheDocument();
+    expect(screen.getByText("Alimentación")).toBeInTheDocument();
+    expect(screen.getByText(/\$\s*20\.000 · 100% de tus vales/)).toBeInTheDocument();
     expect(screen.getAllByTestId("ApexChart").some((chart) => chart.getAttribute("data-chart-type") === "donut")).toBe(true);
     expect(screen.getByLabelText("Meta mínima: 45%")).toBeInTheDocument();
     expect(screen.getByLabelText("Salario: 4%")).toBeInTheDocument();
