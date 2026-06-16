@@ -78,6 +78,10 @@ export function financialSettingsDoc(db: Firestore, userId: string) {
   return doc(businessDoc(db, userId), "financialSettings", "main");
 }
 
+export function uiSettingsDoc(db: Firestore, userId: string) {
+  return doc(businessDoc(db, userId), "uiSettings", "main");
+}
+
 export function educationalConceptsCollection(db: Firestore) {
   return collection(db, "educationalConcepts");
 }

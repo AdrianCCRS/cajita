@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { FixedExpense } from "../../shared/types/domain";
@@ -34,10 +34,14 @@ const fixedExpenses: FixedExpense[] = [
 describe("SettingsPlaceholder", () => {
   const upsertFixedExpense = vi.fn();
   const updateSalaryTarget = vi.fn();
+  const updateAppAccentColor = vi.fn();
+  const resetAppAccentColor = vi.fn();
 
   beforeEach(() => {
     upsertFixedExpense.mockReset();
     updateSalaryTarget.mockReset();
+    updateAppAccentColor.mockReset();
+    resetAppAccentColor.mockReset();
     spaDataMock.mockReturnValue({
       business: {
         id: "business-main",
@@ -49,8 +53,15 @@ describe("SettingsPlaceholder", () => {
         salaryTarget: 1800000,
         updatedAt: "2026-06-10T12:00:00.000Z",
       },
+      uiSettings: {
+        appAccentColor: null,
+        themeMode: "light",
+        updatedAt: "2026-06-10T12:00:00.000Z",
+      },
       upsertFixedExpense,
       updateSalaryTarget,
+      updateAppAccentColor,
+      resetAppAccentColor,
     });
   });
 
@@ -98,5 +109,65 @@ describe("SettingsPlaceholder", () => {
     expect(screen.getAllByText("Objetivo mensual").length).toBeGreaterThan(0);
     expect(screen.getByText("¿Cuánto quieres ganarte al mes?")).toBeTruthy();
     expect(screen.getByText("Guardar salario")).toBeTruthy();
+  });
+
+  it("muestra la tarjeta para cambiar el color de la app con una paleta segura", () => {
+    render(<SettingsPlaceholder />);
+
+    expect(screen.getByText("Color de la app")).toBeTruthy();
+    expect(screen.getByText(/ventas, gastos, pagos y vales no cambian/i)).toBeTruthy();
+    expect(screen.getByLabelText("Colores seguros para la app")).toBeTruthy();
+    expect(screen.getByLabelText("Azul")).toBeTruthy();
+    expect(screen.queryByLabelText("Ventas")).toBeNull();
+    expect(screen.queryByLabelText("Gastos")).toBeNull();
+  });
+
+  it("permite ingresar un color valido y guardarlo", async () => {
+    const user = userEvent.setup();
+    render(<SettingsPlaceholder />);
+
+    const input = screen.getByTestId("ColorField.Input");
+    fireEvent.change(input, { target: { value: "#4F46E5" } });
+    await user.click(screen.getByText("Guardar color"));
+
+    expect(updateAppAccentColor).toHaveBeenCalledWith("#4F46E5");
+    expect(screen.getByText("Vista previa")).toBeTruthy();
+    expect(screen.getByText("Venta")).toBeTruthy();
+    expect(screen.getAllByText("Gasto").length).toBeGreaterThan(0);
+    expect(screen.getByText("Pago")).toBeTruthy();
+    expect(screen.getByText("Vale")).toBeTruthy();
+  });
+
+  it("muestra error si el color manual es invalido", async () => {
+    const user = userEvent.setup();
+    render(<SettingsPlaceholder />);
+
+    const input = screen.getByTestId("ColorField.Input");
+    fireEvent.change(input, { target: { value: "#zzzzzz" } });
+    await user.click(screen.getByText("Guardar color"));
+
+    expect(screen.getByText("Escribe un color válido, por ejemplo #2563EB.")).toBeTruthy();
+    expect(updateAppAccentColor).not.toHaveBeenCalled();
+  });
+
+  it("bloquea un color reservado para movimientos", async () => {
+    const user = userEvent.setup();
+    render(<SettingsPlaceholder />);
+
+    const input = screen.getByTestId("ColorField.Input");
+    fireEvent.change(input, { target: { value: "#22A66F" } });
+    await user.click(screen.getByText("Guardar color"));
+
+    expect(screen.getByText("Ese color ya se usa para identificar movimientos. Elige otro.")).toBeTruthy();
+    expect(updateAppAccentColor).not.toHaveBeenCalled();
+  });
+
+  it("restaura el color original", async () => {
+    const user = userEvent.setup();
+    render(<SettingsPlaceholder />);
+
+    await user.click(screen.getByText("Restaurar color original"));
+
+    expect(resetAppAccentColor).toHaveBeenCalled();
   });
 });

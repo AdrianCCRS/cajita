@@ -20,6 +20,9 @@ type TestActions = {
   deleteServiceMaterial: ReturnType<typeof useSpaData>["deleteServiceMaterial"];
   upsertFixedExpense: ReturnType<typeof useSpaData>["upsertFixedExpense"];
   updateSalaryTarget: ReturnType<typeof useSpaData>["updateSalaryTarget"];
+  updateAppAccentColor: ReturnType<typeof useSpaData>["updateAppAccentColor"];
+  resetAppAccentColor: ReturnType<typeof useSpaData>["resetAppAccentColor"];
+  updateThemeMode: ReturnType<typeof useSpaData>["updateThemeMode"];
   getState: () => ReturnType<typeof useSpaData>;
 };
 
@@ -38,6 +41,9 @@ const TestHarness = forwardRef<TestActions, { children?: ReactNode }>(function T
     deleteServiceMaterial: data.deleteServiceMaterial,
     upsertFixedExpense: data.upsertFixedExpense,
     updateSalaryTarget: data.updateSalaryTarget,
+    updateAppAccentColor: data.updateAppAccentColor,
+    resetAppAccentColor: data.resetAppAccentColor,
+    updateThemeMode: data.updateThemeMode,
     getState: () => data,
   }), [data]);
 
@@ -80,6 +86,8 @@ describe("SpaDataContext — modo local", () => {
     expect(state.fixedExpenses.length).toBe(3);
     expect(state.transactions).toEqual([]);
     expect(state.financialSettings.salaryTarget).toBe(1800000);
+    expect(state.uiSettings.appAccentColor).toBeNull();
+    expect(state.uiSettings.themeMode).toBe("light");
     expect(state.business.name).toBe("Spa Bella");
   });
 
@@ -535,6 +543,48 @@ describe("SpaDataContext — modo local", () => {
 
     const state = ref.current!.getState();
     expect(state.financialSettings.salaryTarget).toBe(2500000);
+  });
+
+  it("actualiza y restaura el color visual de la app", async () => {
+    const { ref } = renderWithProviders();
+
+    await waitFor(() => {
+      expect(ref.current).toBeTruthy();
+    });
+
+    await act(async () => {
+      await ref.current!.updateAppAccentColor("#4f46e5");
+    });
+
+    expect(ref.current!.getState().uiSettings.appAccentColor).toBe("#4F46E5");
+
+    await act(async () => {
+      await ref.current!.resetAppAccentColor();
+    });
+
+    expect(ref.current!.getState().uiSettings.appAccentColor).toBeNull();
+  });
+
+  it("actualiza el modo oscuro y lo aplica al documento", async () => {
+    const { ref } = renderWithProviders();
+
+    await waitFor(() => {
+      expect(ref.current).toBeTruthy();
+    });
+
+    await act(async () => {
+      await ref.current!.updateThemeMode("dark");
+    });
+
+    expect(ref.current!.getState().uiSettings.themeMode).toBe("dark");
+    expect(document.documentElement.dataset.theme).toBe("dark");
+
+    await act(async () => {
+      await ref.current!.updateThemeMode("light");
+    });
+
+    expect(ref.current!.getState().uiSettings.themeMode).toBe("light");
+    expect(document.documentElement.dataset.theme).toBe("light");
   });
 
   it("persiste multiples transacciones de distintos tipos", async () => {
