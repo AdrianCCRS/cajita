@@ -1,3 +1,5 @@
+process.env.TZ = "America/Bogota";
+
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
