@@ -35,7 +35,7 @@ import { DailyIncomeTrendChart } from "./DailyIncomeTrendChart";
 import { DashboardChartCard } from "./DashboardChartCard";
 import { ExpensesByCategoryChart } from "./ExpensesByCategoryChart";
 import { TopServicesChart } from "./TopServicesChart";
-import { MetricDonutCard, MetricSparklineCard } from "../../shared/components/charts";
+import { MetricDonutCard, MetricGaugeChart, MetricSparklineCard } from "../../shared/components/charts";
 type DashboardHelpKey = "income" | "expense" | "business" | "salary" | "profit" | "breakEven";
 type DashboardTab = "today" | "month" | "history";
 
@@ -285,68 +285,86 @@ export function DashboardPlaceholder() {
             />
             <Card className="ui-card wide-card">
               <Card.Content>
-                <div className="section-heading">
-                  <div className="section-subheading">
-                    <span>Meta mínima para no perder plata</span>
-                    <strong>{breakEven ? formatCurrency(breakEven) : "Sin datos suficientes"}</strong>
+                <div className="metric-gauge-card">
+                  <div className="section-heading">
+                    <div className="section-subheading">
+                      <span>Meta mínima para no perder plata</span>
+                      <strong>{breakEven ? formatCurrency(breakEven) : "Sin datos suficientes"}</strong>
+                    </div>
+                    {breakEven ? <b>{Math.round(breakEvenProgress)}%</b> : null}
                   </div>
-                  {breakEven ? <b>{Math.round(breakEvenProgress)}%</b> : null}
+                  {breakEven ? (
+                    <>
+                      <div className="metric-gauge-card__visual">
+                        <MetricGaugeChart
+                          label="Meta mínima"
+                          type={breakEvenProgress >= 100 ? "profit" : "expense"}
+                          value={breakEvenProgress}
+                        />
+                      </div>
+                      <ProgressBar aria-label="Avance de meta mínima" className={breakEvenProgress >= 100 ? "" : "progress--expense"} color={breakEvenProgress >= 100 ? "success" : "warning"} value={Math.min(breakEvenProgress, 100)} />
+                      <p>Meta sugerida por día: {formatCurrency(getDailySuggestedGoal(breakEven, 24))}.</p>
+                    </>
+                  ) : (
+                    <p>Configura tus gastos fijos para ver cuánto necesitas vender cada mes.</p>
+                  )}
+                  <Button variant="ghost" onPress={() => setHelpKey("breakEven")}>
+                    Entender esta meta
+                  </Button>
                 </div>
-                {breakEven ? (
-                  <>
-                    <ProgressBar aria-label="Avance de meta mínima" className={breakEvenProgress >= 100 ? "" : "progress--expense"} color={breakEvenProgress >= 100 ? "success" : "warning"} value={Math.min(breakEvenProgress, 100)} />
-                    <p>Meta sugerida por día: {formatCurrency(getDailySuggestedGoal(breakEven, 24))}.</p>
-                  </>
-                ) : (
-                  <p>Configura tus gastos fijos para ver cuánto necesitas vender cada mes.</p>
-                )}
-                <Button variant="ghost" onPress={() => setHelpKey("breakEven")}>
-                  Entender esta meta
-                </Button>
               </Card.Content>
             </Card>
             <Card className="ui-card wide-card">
               <Card.Content>
-                <div className="section-heading">
-                  <div className="section-subheading">
-                    <span>Salario de la dueña</span>
-                    <strong>
-                      {formatCurrency(ownerTotalReceived)} de {formatCurrency(financialSettings.salaryTarget)}
-                    </strong>
+                <div className="metric-gauge-card">
+                  <div className="section-heading">
+                    <div className="section-subheading">
+                      <span>Salario de la dueña</span>
+                      <strong>
+                        {formatCurrency(ownerTotalReceived)} de {formatCurrency(financialSettings.salaryTarget)}
+                      </strong>
+                    </div>
+                    <b>{Math.round(salaryProgress)}%</b>
                   </div>
-                  <b>{Math.round(salaryProgress)}%</b>
-                </div>
-                <ProgressBar aria-label="Avance de salario" color={salaryPending < 0 ? "warning" : "success"} value={Math.min(salaryProgress, 100)} />
-                <div className="summary-metrics salary-metrics">
-                  <div>
-                    <span>Pagos que ya te hiciste</span>
-                    <b>{formatCurrency(monthlyWithdrawals)}</b>
+                  <div className="metric-gauge-card__visual">
+                    <MetricGaugeChart
+                      label="Salario"
+                      type="withdrawal"
+                      value={salaryProgress}
+                    />
                   </div>
-                  <div>
-                    <span>Vales personales</span>
-                    <b>{formatCurrency(monthlyPersonalVouchers)}</b>
+                  <ProgressBar aria-label="Avance de salario" color={salaryPending < 0 ? "warning" : "success"} value={Math.min(salaryProgress, 100)} />
+                  <div className="summary-metrics salary-metrics">
+                    <div>
+                      <span>Pagos que ya te hiciste</span>
+                      <b>{formatCurrency(monthlyWithdrawals)}</b>
+                    </div>
+                    <div>
+                      <span>Vales personales</span>
+                      <b>{formatCurrency(monthlyPersonalVouchers)}</b>
+                    </div>
+                    <div>
+                      <span>Total tomado del salario</span>
+                      <b>{formatCurrency(ownerTotalReceived)}</b>
+                    </div>
+                    <div>
+                      <span>{salaryPending < 0 ? "Excedente sobre tu salario" : "Pendiente por pagarte"}</span>
+                      <b>{formatCurrency(Math.abs(salaryPending))}</b>
+                    </div>
                   </div>
-                  <div>
-                    <span>Total tomado del salario</span>
-                    <b>{formatCurrency(ownerTotalReceived)}</b>
+                  <p>
+                    {salaryPending < 0
+                      ? `Te pasaste de tu salario objetivo por ${formatCurrency(Math.abs(salaryPending))}.`
+                      : `Te faltan ${formatCurrency(salaryPending)} para completar tu salario objetivo.`}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button className="btn-business" variant="secondary" onPress={() => openRegister("withdrawal")}>
+                      Registrar pago
+                    </Button>
+                    <Button className="btn-business" variant="secondary" onPress={() => openRegister("personal_voucher")}>
+                      Registrar vale
+                    </Button>
                   </div>
-                  <div>
-                    <span>{salaryPending < 0 ? "Excedente sobre tu salario" : "Pendiente por pagarte"}</span>
-                    <b>{formatCurrency(Math.abs(salaryPending))}</b>
-                  </div>
-                </div>
-                <p>
-                  {salaryPending < 0
-                    ? `Te pasaste de tu salario objetivo por ${formatCurrency(Math.abs(salaryPending))}.`
-                    : `Te faltan ${formatCurrency(salaryPending)} para completar tu salario objetivo.`}
-                </p>
-                <div className="flex gap-2">
-                  <Button className="btn-business" variant="secondary" onPress={() => openRegister("withdrawal")}>
-                    Registrar pago
-                  </Button>
-                  <Button className="btn-business" variant="secondary" onPress={() => openRegister("personal_voucher")}>
-                    Registrar vale
-                  </Button>
                 </div>
               </Card.Content>
             </Card>

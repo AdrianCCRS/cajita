@@ -559,6 +559,23 @@ h3 {
   padding: 14px;
 }
 
+.metric-gauge-card {
+  display: grid;
+  gap: 14px;
+}
+
+.metric-gauge-card__visual {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+
+.metric-gauge-chart {
+  width: min(100%, 220px);
+  min-width: 0;
+  height: 170px;
+}
+
 .btn-business {
   border-color: var(--business);
   background-color: var(--app-accent-soft);

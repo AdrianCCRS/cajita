@@ -32,13 +32,22 @@ describe("DashboardPlaceholder", () => {
   it("muestra composicion circular en la tab del mes", () => {
     spaDataMock.mockReturnValue({
       transactions: [
-        transaction({ id: "income-1", type: "income", amount: 200000, date: "2026-06-15", serviceName: "Manicura" }),
-        transaction({ id: "income-2", type: "income", amount: 100000, date: "2026-06-16", serviceName: "Cabello" }),
+        transaction({ id: "income-1", type: "income", amount: 200000, date: "2026-06-15", serviceName: "Manicura", priceAtTime: 200000, costAtTime: 50000 }),
+        transaction({ id: "income-2", type: "income", amount: 100000, date: "2026-06-16", serviceName: "Cabello", priceAtTime: 100000, costAtTime: 25000 }),
         transaction({ id: "expense-1", type: "expense", amount: 40000, date: "2026-06-15", categoryName: "Insumos" }),
         transaction({ id: "withdrawal-1", type: "withdrawal", amount: 50000, date: "2026-06-15" }),
         transaction({ id: "voucher-1", type: "personal_voucher", amount: 20000, date: "2026-06-15", personalCategoryName: "Alimentación" }),
       ],
-      fixedExpenses: [],
+      fixedExpenses: [
+        {
+          id: "fixed-1",
+          name: "Arriendo",
+          amount: 500000,
+          isActive: true,
+          createdAt: "2026-06-01T12:00:00.000Z",
+          updatedAt: "2026-06-01T12:00:00.000Z",
+        },
+      ],
       financialSettings: {
         salaryTarget: 1800000,
       },
@@ -55,6 +64,9 @@ describe("DashboardPlaceholder", () => {
     expect(screen.getAllByText("Vales personales").length).toBeGreaterThan(0);
     expect(screen.getByText("Ganancia después de salario")).toBeInTheDocument();
     expect(screen.getAllByTestId("ApexChart").some((chart) => chart.getAttribute("data-chart-type") === "donut")).toBe(true);
+    expect(screen.getByLabelText("Meta mínima: 45%")).toBeInTheDocument();
+    expect(screen.getByLabelText("Salario: 4%")).toBeInTheDocument();
+    expect(screen.getAllByTestId("ApexChart").some((chart) => chart.getAttribute("data-chart-type") === "radialBar")).toBe(true);
   });
 
   it("muestra KPIs y composicion circular historica sin mezclar gastos, salario y vales", async () => {

@@ -9,3 +9,7 @@ export {
   type MetricDonutCardProps,
   type MetricDonutSegment,
 } from "./MetricDonutCard";
+export {
+  MetricGaugeChart,
+  type MetricGaugeChartProps,
+} from "./MetricGaugeChart";
