@@ -304,7 +304,7 @@ function FilterGroup({
       {items.map((item) => (
         <Button
           key={item.id}
-          className={selectedId === item.id && item.id === "expense" ? "segmented--expense" : selectedId === item.id && item.id === "withdrawal" ? "segmented--withdrawal" : selectedId === item.id && item.id === "personal_voucher" ? "segmented--voucher" : ""}
+          className={selectedId===item.id && item.id === "income" ? "segmented--income" : selectedId === item.id && item.id === "expense" ? "segmented--expense" : selectedId === item.id && item.id === "withdrawal" ? "segmented--withdrawal" : selectedId === item.id && item.id === "personal_voucher" ? "segmented--voucher" : ""}
           size="sm"
           variant={selectedId === item.id ? "primary" : "tertiary"}
           onPress={() => onSelect(item.id)}
