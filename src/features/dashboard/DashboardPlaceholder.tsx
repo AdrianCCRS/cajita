@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { Button, Card, HelpDrawer, MetricCard, ProgressBar, ScreenHero, Tabs } from "../../shared/components/ui";
+import { Button, Card, HelpDrawer, ProgressBar, ScreenHero, Tabs } from "../../shared/components/ui";
 import { useSpaData } from "../../shared/data/SpaDataContext";
 import type { Transaction, TransactionType } from "../../shared/types/domain";
 import {
   getDailyIncomeChartData,
   getExpensesByCategoryChartData,
+  getHistoricalMonthlyMetricSparklineData,
+  getMonthlyMetricSparklineData,
   getServicesByCountChartData,
   getServicesByRevenueChartData,
   getWeeklyIncomeExpenseChartData,
@@ -31,7 +33,7 @@ import { DailyIncomeTrendChart } from "./DailyIncomeTrendChart";
 import { DashboardChartCard } from "./DashboardChartCard";
 import { ExpensesByCategoryChart } from "./ExpensesByCategoryChart";
 import { TopServicesChart } from "./TopServicesChart";
-
+import { MetricSparklineCard } from "../../shared/components/charts";
 type DashboardHelpKey = "income" | "expense" | "business" | "salary" | "profit" | "breakEven";
 type DashboardTab = "today" | "month" | "history";
 
@@ -117,6 +119,15 @@ export function DashboardPlaceholder() {
   )[0];
   const weeklyChartData = getWeeklyIncomeExpenseChartData(transactions, year, month);
   const dailyIncomeData = getDailyIncomeChartData(transactions, year, month);
+  const monthlyIncomeSparklineData = getMonthlyMetricSparklineData(transactions, year, month, "income");
+  const monthlyExpensesSparklineData = getMonthlyMetricSparklineData(transactions, year, month, "expense");
+  const monthlyBusinessSparklineData = getMonthlyMetricSparklineData(transactions, year, month, "business");
+  const monthlyOwnerSparklineData = getMonthlyMetricSparklineData(transactions, year, month, "ownerTotal");
+  const monthlyProfitSparklineData = getMonthlyMetricSparklineData(transactions, year, month, "profit");
+  const historicalIncomeSparklineData = getHistoricalMonthlyMetricSparklineData(transactions, "income");
+  const historicalExpensesSparklineData = getHistoricalMonthlyMetricSparklineData(transactions, "expense");
+  const historicalBusinessSparklineData = getHistoricalMonthlyMetricSparklineData(transactions, "business");
+  const historicalProfitSparklineData = getHistoricalMonthlyMetricSparklineData(transactions, "profit");
   const categoryExpenseData = getExpensesByCategoryChartData(transactions, year, month);
   const historicalCategoryExpenseData = getExpensesByCategoryChartData(transactions);
   const servicesByCountData = getServicesByCountChartData(transactions);
@@ -154,13 +165,6 @@ export function DashboardPlaceholder() {
         </Button>
       </div>
 
-      <DashboardSummaryCard
-        description={summary.description}
-        metrics={summary.metrics}
-        title={summary.title}
-        value={summary.value}
-      />
-
       <Tabs
         ariaLabel="Rango del dashboard"
         items={dashboardTabs}
@@ -171,27 +175,32 @@ export function DashboardPlaceholder() {
       <div className="dashboard-tab-panel" role="tabpanel">
         {activeTab === "today" ? (
           <>
-            <div className="placeholder-grid compact-grid">
-              <MetricCard
-                description={!todayIncome ? "Hoy todavía no hay ventas registradas. ¡Empieza cuando quieras!" : "Lo que vendiste hoy."}
+            <div className="dashboard-kpi-grid">
+              <MetricSparklineCard
+                currency
+                data={monthlyIncomeSparklineData}
+                emptyMessage="Hoy todavía no hay ventas registradas. ¡Empieza cuando quieras!"
                 title="Ventas de hoy"
-                tone="income"
-                value={formatCurrency(todayIncome)}
-                onHelp={() => setHelpKey("income")}
+                type="income"
+                value={todayIncome}
+                valueLabel="Ventas"
               />
-              <MetricCard
-                description={todayExpenses ? "Gastos registrados hoy." : "No has registrado gastos hoy."}
+              <MetricSparklineCard
+                currency
+                data={monthlyExpensesSparklineData}
+                emptyMessage="No has registrado gastos hoy."
                 title="Gastos de hoy"
-                tone="expense"
-                value={formatCurrency(todayExpenses)}
-                onHelp={() => setHelpKey("expense")}
+                type="expense"
+                value={todayExpenses}
+                valueLabel="Gastos"
               />
-              <MetricCard
-                description="Ventas menos gastos del día."
+              <MetricSparklineCard
+                currency
+                data={monthlyBusinessSparklineData}
                 title="Dinero de hoy"
-                tone="business"
-                value={formatCurrency(todayBusinessMoney)}
-                onHelp={() => setHelpKey("business")}
+                type="business"
+                value={todayBusinessMoney}
+                valueLabel="Dinero del negocio"
               />
             </div>
             <DailyIncomeTrendChart data={dailyIncomeData} />
@@ -200,6 +209,42 @@ export function DashboardPlaceholder() {
 
         {activeTab === "month" ? (
           <>
+            <div className="dashboard-kpi-grid">
+              <MetricSparklineCard
+                currency
+                data={monthlyIncomeSparklineData}
+                emptyMessage="¡Bienvenida a un nuevo mes! Empieza registrando tu primera venta."
+                title="Ventas del mes"
+                type="income"
+                value={monthlyIncome}
+                valueLabel="Ventas"
+              />
+              <MetricSparklineCard
+                currency
+                data={monthlyExpensesSparklineData}
+                emptyMessage="No has registrado gastos este mes. ¡Eso es buena señal!"
+                title="Gastos del mes"
+                type="expense"
+                value={monthlyExpenses}
+                valueLabel="Gastos"
+              />
+              <MetricSparklineCard
+                currency
+                data={monthlyOwnerSparklineData}
+                title="Mi salario"
+                type="withdrawal"
+                value={ownerTotalReceived}
+                valueLabel="Salario tomado"
+              />
+              <MetricSparklineCard
+                currency
+                data={monthlyProfitSparklineData}
+                title="Ganancia"
+                type="profit"
+                value={netProfit}
+                valueLabel="Después de salario"
+              />
+            </div>
             <DashboardChartCard
               data={weeklyChartData}
               onRegisterIncome={() => openRegister("income")}
@@ -298,6 +343,40 @@ export function DashboardPlaceholder() {
 
         {activeTab === "history" ? (
           <>
+            <div className="dashboard-kpi-grid">
+              <MetricSparklineCard
+                currency
+                data={historicalIncomeSparklineData}
+                title="Ventas históricas"
+                type="income"
+                value={historicalIncome}
+                valueLabel="Ventas"
+              />
+              <MetricSparklineCard
+                currency
+                data={historicalExpensesSparklineData}
+                title="Gastos históricos"
+                type="expense"
+                value={historicalExpenses}
+                valueLabel="Gastos"
+              />
+              <MetricSparklineCard
+                currency
+                data={historicalBusinessSparklineData}
+                title="Dinero del negocio"
+                type="business"
+                value={historicalBusinessMoney}
+                valueLabel="Negocio"
+              />
+              <MetricSparklineCard
+                currency
+                data={historicalProfitSparklineData}
+                title="Ganancia histórica"
+                type="profit"
+                value={historicalProfit}
+                valueLabel="Después de salario"
+              />
+            </div>
             <ExpensesByCategoryChart data={historicalCategoryExpenseData} />
             <TopServicesChart data={servicesByCountData} metric="count" />
             <TopServicesChart data={servicesByRevenueData} metric="revenue" />

@@ -3,6 +3,8 @@ import type { Transaction } from "../types/domain";
 import {
   getDailyIncomeChartData,
   getExpensesByCategoryChartData,
+  getHistoricalMonthlyMetricSparklineData,
+  getMonthlyMetricSparklineData,
   getServicesByCountChartData,
   getServicesByRevenueChartData,
   getWeeklyIncomeExpenseChartData,
@@ -286,5 +288,88 @@ describe("getDailyIncomeChartData", () => {
     );
 
     expect(result.series[9]).toBe(30000);
+  });
+});
+
+describe("getMonthlyMetricSparklineData", () => {
+  it("agrupa ventas, gastos y dinero del negocio por dia", () => {
+    const transactions = [
+      transaction({ id: "i1", type: "income", amount: 100000, date: "2026-01-01" }),
+      transaction({ id: "e1", type: "expense", amount: 30000, date: "2026-01-01" }),
+      transaction({ id: "i2", type: "income", amount: 50000, date: "2026-01-31" }),
+    ];
+
+    const income = getMonthlyMetricSparklineData(transactions, 2026, 1, "income");
+    const expenses = getMonthlyMetricSparklineData(transactions, 2026, 1, "expense");
+    const business = getMonthlyMetricSparklineData(transactions, 2026, 1, "business");
+
+    expect(income).toHaveLength(31);
+    expect(income[0]).toEqual({ label: "1", value: 100000 });
+    expect(expenses[0]).toEqual({ label: "1", value: 30000 });
+    expect(business[0]).toEqual({ label: "1", value: 70000 });
+    expect(business[30]).toEqual({ label: "31", value: 50000 });
+  });
+
+  it("separa salario y vales de los gastos del negocio", () => {
+    const transactions = [
+      transaction({ id: "i1", type: "income", amount: 200000, date: "2026-01-10" }),
+      transaction({ id: "e1", type: "expense", amount: 40000, date: "2026-01-10" }),
+      transaction({ id: "w1", type: "withdrawal", amount: 50000, date: "2026-01-10" }),
+      transaction({ id: "v1", type: "personal_voucher", amount: 20000, date: "2026-01-10" }),
+    ];
+
+    const expenses = getMonthlyMetricSparklineData(transactions, 2026, 1, "expense");
+    const ownerTotal = getMonthlyMetricSparklineData(transactions, 2026, 1, "ownerTotal");
+    const profit = getMonthlyMetricSparklineData(transactions, 2026, 1, "profit");
+
+    expect(expenses[9].value).toBe(40000);
+    expect(ownerTotal[9].value).toBe(70000);
+    expect(profit[9].value).toBe(90000);
+  });
+});
+
+describe("getHistoricalMonthlyMetricSparklineData", () => {
+  it("agrupa historico por mes y conserva meses intermedios en cero", () => {
+    const result = getHistoricalMonthlyMetricSparklineData(
+      [
+        transaction({ id: "i1", type: "income", amount: 100000, date: "2026-01-15" }),
+        transaction({ id: "i2", type: "income", amount: 50000, date: "2026-03-01" }),
+      ],
+      "income",
+    );
+
+    expect(result).toEqual([
+      { label: "01/26", value: 100000 },
+      { label: "02/26", value: 0 },
+      { label: "03/26", value: 50000 },
+    ]);
+  });
+
+  it("retorna arreglo vacio cuando no hay movimientos", () => {
+    expect(getHistoricalMonthlyMetricSparklineData([], "income")).toEqual([]);
+  });
+
+  it("retorna arreglo vacio cuando no hay movimientos de la metrica solicitada", () => {
+    const result = getHistoricalMonthlyMetricSparklineData(
+      [
+        transaction({ id: "e1", type: "expense", amount: 30000, date: "2026-01-15" }),
+        transaction({ id: "w1", type: "withdrawal", amount: 50000, date: "2026-02-01" }),
+      ],
+      "income",
+    );
+
+    expect(result).toEqual([]);
+  });
+
+  it("ignora fechas invalidas en el historico", () => {
+    const result = getHistoricalMonthlyMetricSparklineData(
+      [
+        transaction({ id: "bad", type: "income", amount: 999999, date: "no-date" }),
+        transaction({ id: "good", type: "income", amount: 50000, date: "2026-03-01" }),
+      ],
+      "income",
+    );
+
+    expect(result).toEqual([{ label: "03/26", value: 50000 }]);
   });
 });
