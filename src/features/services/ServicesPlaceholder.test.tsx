@@ -118,8 +118,8 @@ describe("ServicesPlaceholder", () => {
     render(<ServicesPlaceholder />);
 
     expect(screen.getByText("Servicios configurados")).toBeTruthy();
-    expect(screen.getByRole("columnheader", { name: "Servicio" })).toBeTruthy();
-    expect(screen.getByRole("columnheader", { name: "Precio" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: /^Servicio/ })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: /^Precio/ })).toBeTruthy();
     expect(screen.getByText("Manicura tradicional")).toBeTruthy();
     expect(screen.getByText("Cepillado")).toBeTruthy();
     expect(screen.getByText("1 activos de 2")).toBeTruthy();

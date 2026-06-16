@@ -4,7 +4,9 @@ import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import { Table } from "@heroui/react";
 import { BottomSheet, Button, Card, EmptyState, Input, Label, MoneyField, ScreenHero, Tabs, TextField } from "../../shared/components/ui";
+import { TablePagination } from "../../shared/components/TablePagination";
 import { useSpaData } from "../../shared/data/SpaDataContext";
+import { useTableSortPagination, type SortConfig } from "../../shared/hooks/useTableSortPagination";
 import type { MeasurementType, PurchaseUnit, RawMaterial, Service, ServiceMaterial } from "../../shared/types/domain";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
 import { getServiceMargin } from "../../shared/utils/financials";
@@ -14,6 +16,8 @@ import { rawMaterialSchema, serviceMaterialSchema, serviceSchema } from "../../s
 
 type ServiceSheetMode = "create" | "edit";
 type ServicesTab = "services" | "materials";
+type ServiceSortColumn = "name" | "price" | "cost" | "margin" | "status";
+type MaterialSortColumn = "name" | "purchase" | "unitCost" | "status";
 type MaterialSheetMode = "create" | "edit";
 type ServiceMaterialsSheetMode = "list" | "add";
 type MaterialStatusFilter = "all" | "active" | "inactive";
@@ -90,6 +94,36 @@ export function ServicesPlaceholder() {
       return matchesQuery && matchesStatus;
     });
   }, [materialQuery, materialStatusFilter, rawMaterials]);
+
+  const serviceSortFns: Record<ServiceSortColumn, (a: Service, b: Service) => number> = {
+    name: (a, b) => a.name.localeCompare(b.name, "es-CO"),
+    price: (a, b) => a.defaultPrice - b.defaultPrice,
+    cost: (a, b) => a.estimatedCost - b.estimatedCost,
+    margin: (a, b) => getServiceMargin(a) - getServiceMargin(b),
+    status: (a, b) => Number(a.isActive) - Number(b.isActive),
+  };
+
+  const serviceTable = useTableSortPagination({
+    data: services,
+    defaultSort: { column: "name", direction: "asc" },
+    defaultPageSize: 10,
+    sortFns: serviceSortFns,
+  });
+
+  const materialSortFns: Record<MaterialSortColumn, (a: RawMaterial, b: RawMaterial) => number> = {
+    name: (a, b) => a.name.localeCompare(b.name, "es-CO"),
+    purchase: (a, b) => a.purchasePrice - b.purchasePrice,
+    unitCost: (a, b) => a.unitCost - b.unitCost,
+    status: (a, b) => Number(a.isActive) - Number(b.isActive),
+  };
+
+  const materialsTable = useTableSortPagination({
+    data: filteredRawMaterials,
+    defaultSort: { column: "name", direction: "asc" },
+    defaultPageSize: 10,
+    sortFns: materialSortFns,
+  });
+
   const costContributionData = useMemo(
     () => getRawMaterialsByCostContribution(serviceMaterialsByServiceId, rawMaterials),
     [serviceMaterialsByServiceId, rawMaterials],
@@ -376,16 +410,26 @@ export function ServicesPlaceholder() {
                     <caption>Servicios configurados</caption>
                     <thead>
                       <tr>
-                        <th scope="col">Servicio</th>
-                        <th scope="col">Precio</th>
-                        <th scope="col" className="optional-column">Costo</th>
-                        <th scope="col" className="optional-column">Deja</th>
-                        <th scope="col">Estado</th>
+                        <th aria-sort={serviceTable.sort.column === "name" ? (serviceTable.sort.direction === "asc" ? "ascending" : "descending") : "none"} scope="col" onClick={() => serviceTable.toggleSort("name")}>
+                          Servicio <span className="sort-indicator">{serviceTable.sort.column === "name" ? (serviceTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                        </th>
+                        <th aria-sort={serviceTable.sort.column === "price" ? (serviceTable.sort.direction === "asc" ? "ascending" : "descending") : "none"} scope="col" onClick={() => serviceTable.toggleSort("price")}>
+                          Precio <span className="sort-indicator">{serviceTable.sort.column === "price" ? (serviceTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                        </th>
+                        <th aria-sort={serviceTable.sort.column === "cost" ? (serviceTable.sort.direction === "asc" ? "ascending" : "descending") : "none"} className="optional-column" scope="col" onClick={() => serviceTable.toggleSort("cost")}>
+                          Costo <span className="sort-indicator">{serviceTable.sort.column === "cost" ? (serviceTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                        </th>
+                        <th aria-sort={serviceTable.sort.column === "margin" ? (serviceTable.sort.direction === "asc" ? "ascending" : "descending") : "none"} className="optional-column" scope="col" onClick={() => serviceTable.toggleSort("margin")}>
+                          Deja <span className="sort-indicator">{serviceTable.sort.column === "margin" ? (serviceTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                        </th>
+                        <th aria-sort={serviceTable.sort.column === "status" ? (serviceTable.sort.direction === "asc" ? "ascending" : "descending") : "none"} scope="col" onClick={() => serviceTable.toggleSort("status")}>
+                          Estado <span className="sort-indicator">{serviceTable.sort.column === "status" ? (serviceTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                        </th>
                         <th scope="col">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {services.map((service) => (
+                      {serviceTable.paginatedData.map((service) => (
                         <tr className={service.isActive ? "" : "muted"} key={service.id}>
                           <th scope="row">
                             <span>{service.name}</span>
@@ -438,6 +482,11 @@ export function ServicesPlaceholder() {
                     </tbody>
                   </table>
                 </div>
+                <TablePagination
+                  pagination={serviceTable.pagination}
+                  onPageChange={serviceTable.setCurrentPage}
+                  onPageSizeChange={serviceTable.changePageSize}
+                />
               </Card.Content>
             </Card>
           ) : (
@@ -497,20 +546,64 @@ export function ServicesPlaceholder() {
           {rawMaterials.length ? (
             <Card className="ui-card service-table-card">
               <Card.Content>
-                {filteredRawMaterials.length ? (
-                  <Table className="service-table heroui-data-table" aria-label="Insumos configurados">
-                    <Table.ScrollContainer>
-                      <Table.Content>
-                        <caption>Insumos configurados</caption>
-                        <Table.Header>
-                          <Table.Column isRowHeader>Insumo</Table.Column>
-                          <Table.Column>Compra</Table.Column>
-                          <Table.Column className="optional-column">Costo base</Table.Column>
-                          <Table.Column>Estado</Table.Column>
-                          <Table.Column>Acciones</Table.Column>
-                        </Table.Header>
-                        <Table.Body>
-                          {filteredRawMaterials.map((material) => (
+                  {filteredRawMaterials.length ? (
+                    <Table className="service-table heroui-data-table" aria-label="Insumos configurados">
+                      <Table.ScrollContainer>
+                        <Table.Content>
+                          <caption>Insumos configurados</caption>
+                          <Table.Header>
+                            <Table.Column isRowHeader>
+                              <span
+                                aria-sort={materialsTable.sort.column === "name" ? (materialsTable.sort.direction === "asc" ? "ascending" : "descending") : "none"}
+                                className="sortable-col-header"
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => materialsTable.toggleSort("name")}
+                                onKeyDown={(e) => { if (e.key === "Enter") materialsTable.toggleSort("name"); }}
+                              >
+                                Insumo <span className="sort-indicator">{materialsTable.sort.column === "name" ? (materialsTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                              </span>
+                            </Table.Column>
+                            <Table.Column>
+                              <span
+                                aria-sort={materialsTable.sort.column === "purchase" ? (materialsTable.sort.direction === "asc" ? "ascending" : "descending") : "none"}
+                                className="sortable-col-header"
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => materialsTable.toggleSort("purchase")}
+                                onKeyDown={(e) => { if (e.key === "Enter") materialsTable.toggleSort("purchase"); }}
+                              >
+                                Compra <span className="sort-indicator">{materialsTable.sort.column === "purchase" ? (materialsTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                              </span>
+                            </Table.Column>
+                            <Table.Column className="optional-column">
+                              <span
+                                aria-sort={materialsTable.sort.column === "unitCost" ? (materialsTable.sort.direction === "asc" ? "ascending" : "descending") : "none"}
+                                className="sortable-col-header"
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => materialsTable.toggleSort("unitCost")}
+                                onKeyDown={(e) => { if (e.key === "Enter") materialsTable.toggleSort("unitCost"); }}
+                              >
+                                Costo base <span className="sort-indicator">{materialsTable.sort.column === "unitCost" ? (materialsTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                              </span>
+                            </Table.Column>
+                            <Table.Column>
+                              <span
+                                aria-sort={materialsTable.sort.column === "status" ? (materialsTable.sort.direction === "asc" ? "ascending" : "descending") : "none"}
+                                className="sortable-col-header"
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => materialsTable.toggleSort("status")}
+                                onKeyDown={(e) => { if (e.key === "Enter") materialsTable.toggleSort("status"); }}
+                              >
+                                Estado <span className="sort-indicator">{materialsTable.sort.column === "status" ? (materialsTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                              </span>
+                            </Table.Column>
+                            <Table.Column>Acciones</Table.Column>
+                          </Table.Header>
+                          <Table.Body>
+                            {materialsTable.paginatedData.map((material) => (
                             <Table.Row className={material.isActive ? "" : "muted"} key={material.id}>
                               <Table.Cell>
                                 <span>{material.name}</span>
@@ -546,14 +639,21 @@ export function ServicesPlaceholder() {
                         </Table.Body>
                       </Table.Content>
                     </Table.ScrollContainer>
-                  </Table>
-                ) : (
-                  <div className="inline-empty-state">
-                    <strong>No hay insumos con ese filtro.</strong>
-                    <p>Prueba con otro nombre o cambia el estado.</p>
-                  </div>
-                )}
-              </Card.Content>
+                    </Table>
+                  ) : (
+                    <div className="inline-empty-state">
+                      <strong>No hay insumos con ese filtro.</strong>
+                      <p>Prueba con otro nombre o cambia el estado.</p>
+                    </div>
+                  )}
+                  {materialsTable.pagination.totalItems > 0 ? (
+                    <TablePagination
+                      pagination={materialsTable.pagination}
+                      onPageChange={materialsTable.setCurrentPage}
+                      onPageSizeChange={materialsTable.changePageSize}
+                    />
+                  ) : null}
+                </Card.Content>
             </Card>
           ) : (
             <EmptyState

@@ -105,10 +105,10 @@ describe("SettingsPlaceholder", () => {
     render(<SettingsPlaceholder />);
 
     expect(screen.getByText("Gastos fijos configurados")).toBeTruthy();
-    expect(screen.getByRole("columnheader", { name: "Gasto" })).toBeTruthy();
-    expect(screen.getByRole("columnheader", { name: "Valor" })).toBeTruthy();
-    expect(screen.getByRole("columnheader", { name: "Día" })).toBeTruthy();
-    expect(screen.getByRole("columnheader", { name: "Categoría" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: /^Gasto/ })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: /^Valor/ })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: /^Día/ })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: /^Categoría/ })).toBeTruthy();
     expect(screen.getAllByText("Arriendo").length).toBeGreaterThan(0);
     expect(screen.getByText("Internet")).toBeTruthy();
     expect(screen.getByText("Día 5")).toBeTruthy();

@@ -2215,3 +2215,103 @@ h3 {
     transform: translateX(50%);
   }
 }
+
+/* ---- Sortable table headers ---- */
+
+th[aria-sort] {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+th[aria-sort]:hover {
+  color: var(--foreground);
+}
+
+th[aria-sort] .sort-indicator {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 0.7em;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+th[aria-sort]:hover .sort-indicator,
+th[aria-sort="ascending"] .sort-indicator,
+th[aria-sort="descending"] .sort-indicator {
+  opacity: 1;
+}
+
+/* ---- Table pagination ---- */
+
+.table-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.table-pagination__info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.table-pagination__select {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 28px 4px 8px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  cursor: pointer;
+}
+
+.table-pagination__nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.table-pagination__page-label {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  min-width: 60px;
+  text-align: center;
+}
+
+/* ---- Sortable column header (HeroUI Table compatibility) ---- */
+
+.sortable-col-header {
+  cursor: pointer;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sortable-col-header .sort-indicator {
+  font-size: 0.7em;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.sortable-col-header:hover .sort-indicator,
+.sortable-col-header[aria-sort="ascending"] .sort-indicator,
+.sortable-col-header[aria-sort="descending"] .sort-indicator {
+  opacity: 1;
+}

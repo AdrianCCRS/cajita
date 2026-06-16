@@ -2,7 +2,9 @@ import { CalendarDays, Pencil, Plus, ReceiptText, Settings, Wallet } from "lucid
 import { useState, type FormEvent } from "react";
 import { useOutletContext } from "react-router-dom";
 import { BottomSheet, Button, Card, EmptyState, Input, Label, MoneyField, ScreenHero, TextField } from "../../shared/components/ui";
+import { TablePagination } from "../../shared/components/TablePagination";
 import { useSpaData } from "../../shared/data/SpaDataContext";
+import { useTableSortPagination } from "../../shared/hooks/useTableSortPagination";
 import type { FixedExpense, RegisterPrefill, TransactionType } from "../../shared/types/domain";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
 import { getMonthlyFixedExpensePayments, getPendingFixedExpensesForMonth, getTotalFixedExpenses } from "../../shared/utils/financials";
@@ -10,6 +12,7 @@ import { fixedExpenseSchema, salarySchema } from "../../shared/validation/schema
 import { AppThemeSettingsCard } from "./AppThemeSettingsCard";
 
 type FixedExpenseSheetMode = "create" | "edit";
+type FixedExpenseSortColumn = "name" | "amount" | "dueDay" | "category" | "status";
 
 export function SettingsPlaceholder() {
   const outletContext = useOutletContext<{ openRegister: (type: TransactionType, prefill?: RegisterPrefill) => void } | null>();
@@ -34,6 +37,21 @@ export function SettingsPlaceholder() {
   const month = today.getMonth() + 1;
   const fixedPaymentsThisMonth = getMonthlyFixedExpensePayments(transactions, year, month);
   const pendingFixedExpenses = getPendingFixedExpensesForMonth(fixedExpenses, transactions, year, month);
+
+  const fixedExpenseSortFns: Record<FixedExpenseSortColumn, (a: FixedExpense, b: FixedExpense) => number> = {
+    name: (a, b) => a.name.localeCompare(b.name, "es-CO"),
+    amount: (a, b) => a.amount - b.amount,
+    dueDay: (a, b) => (a.dueDay ?? 1) - (b.dueDay ?? 1),
+    category: (a, b) => (a.categoryName ?? "").localeCompare(b.categoryName ?? "", "es-CO"),
+    status: (a, b) => Number(a.isActive) - Number(b.isActive),
+  };
+
+  const fixedExpensesTable = useTableSortPagination({
+    data: fixedExpenses,
+    defaultSort: { column: "name", direction: "asc" },
+    defaultPageSize: 10,
+    sortFns: fixedExpenseSortFns,
+  });
 
   async function handleFixedExpense(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -206,16 +224,26 @@ export function SettingsPlaceholder() {
                 <caption>Gastos fijos configurados</caption>
                 <thead>
                   <tr>
-                    <th scope="col">Gasto</th>
-                    <th scope="col">Valor</th>
-                    <th scope="col">Día</th>
-                    <th scope="col">Categoría</th>
-                    <th scope="col">Estado</th>
+                    <th aria-sort={fixedExpensesTable.sort.column === "name" ? (fixedExpensesTable.sort.direction === "asc" ? "ascending" : "descending") : "none"} scope="col" onClick={() => fixedExpensesTable.toggleSort("name")}>
+                      Gasto <span className="sort-indicator">{fixedExpensesTable.sort.column === "name" ? (fixedExpensesTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                    </th>
+                    <th aria-sort={fixedExpensesTable.sort.column === "amount" ? (fixedExpensesTable.sort.direction === "asc" ? "ascending" : "descending") : "none"} scope="col" onClick={() => fixedExpensesTable.toggleSort("amount")}>
+                      Valor <span className="sort-indicator">{fixedExpensesTable.sort.column === "amount" ? (fixedExpensesTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                    </th>
+                    <th aria-sort={fixedExpensesTable.sort.column === "dueDay" ? (fixedExpensesTable.sort.direction === "asc" ? "ascending" : "descending") : "none"} scope="col" onClick={() => fixedExpensesTable.toggleSort("dueDay")}>
+                      Día <span className="sort-indicator">{fixedExpensesTable.sort.column === "dueDay" ? (fixedExpensesTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                    </th>
+                    <th aria-sort={fixedExpensesTable.sort.column === "category" ? (fixedExpensesTable.sort.direction === "asc" ? "ascending" : "descending") : "none"} scope="col" onClick={() => fixedExpensesTable.toggleSort("category")}>
+                      Categoría <span className="sort-indicator">{fixedExpensesTable.sort.column === "category" ? (fixedExpensesTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                    </th>
+                    <th aria-sort={fixedExpensesTable.sort.column === "status" ? (fixedExpensesTable.sort.direction === "asc" ? "ascending" : "descending") : "none"} scope="col" onClick={() => fixedExpensesTable.toggleSort("status")}>
+                      Estado <span className="sort-indicator">{fixedExpensesTable.sort.column === "status" ? (fixedExpensesTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                    </th>
                     <th scope="col">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {fixedExpenses.map((expense) => (
+                  {fixedExpensesTable.paginatedData.map((expense) => (
                     <tr className={expense.isActive ? "" : "muted"} key={expense.id}>
                       <th scope="row">
                         <span>{expense.name}</span>
@@ -250,6 +278,11 @@ export function SettingsPlaceholder() {
                 </tbody>
               </table>
             </div>
+            <TablePagination
+              pagination={fixedExpensesTable.pagination}
+              onPageChange={fixedExpensesTable.setCurrentPage}
+              onPageSizeChange={fixedExpensesTable.changePageSize}
+            />
           </Card.Content>
         </Card>
       ) : (
