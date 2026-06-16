@@ -17,6 +17,9 @@ const fixedExpenses: FixedExpense[] = [
     id: "fixed-1",
     name: "Arriendo",
     amount: 600000,
+    categoryId: "cat-arriendo",
+    categoryName: "Arriendo",
+    dueDay: 5,
     isActive: true,
     createdAt: "2026-06-10T12:00:00.000Z",
     updatedAt: "2026-06-10T12:00:00.000Z",
@@ -25,6 +28,9 @@ const fixedExpenses: FixedExpense[] = [
     id: "fixed-2",
     name: "Internet",
     amount: 90000,
+    categoryId: "cat-servicios",
+    categoryName: "Servicios",
+    dueDay: 10,
     isActive: true,
     createdAt: "2026-06-10T12:00:00.000Z",
     updatedAt: "2026-06-10T12:00:00.000Z",
@@ -48,6 +54,36 @@ describe("SettingsPlaceholder", () => {
         name: "Spa Mariela",
         currency: "COP",
       },
+      categories: [
+        {
+          id: "cat-arriendo",
+          name: "Arriendo",
+          isActive: true,
+          createdAt: "2026-06-10T12:00:00.000Z",
+          updatedAt: "2026-06-10T12:00:00.000Z",
+        },
+        {
+          id: "cat-servicios",
+          name: "Servicios",
+          isActive: true,
+          createdAt: "2026-06-10T12:00:00.000Z",
+          updatedAt: "2026-06-10T12:00:00.000Z",
+        },
+      ],
+      transactions: [
+        {
+          id: "tx-fixed-1",
+          type: "expense",
+          amount: 600000,
+          date: "2026-06-05",
+          paymentMethod: "transfer",
+          categoryId: "cat-arriendo",
+          categoryName: "Arriendo",
+          expenseType: "fixed",
+          createdAt: "2026-06-05T12:00:00.000Z",
+          updatedAt: "2026-06-05T12:00:00.000Z",
+        },
+      ],
       fixedExpenses,
       financialSettings: {
         salaryTarget: 1800000,
@@ -71,9 +107,14 @@ describe("SettingsPlaceholder", () => {
     expect(screen.getByText("Gastos fijos configurados")).toBeTruthy();
     expect(screen.getByRole("columnheader", { name: "Gasto" })).toBeTruthy();
     expect(screen.getByRole("columnheader", { name: "Valor" })).toBeTruthy();
-    expect(screen.getByText("Arriendo")).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Día" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Categoría" })).toBeTruthy();
+    expect(screen.getAllByText("Arriendo").length).toBeGreaterThan(0);
     expect(screen.getByText("Internet")).toBeTruthy();
-    expect(screen.getByText("2 activos de 2")).toBeTruthy();
+    expect(screen.getByText("Día 5")).toBeTruthy();
+    expect(screen.getByText("Día 10")).toBeTruthy();
+    expect(screen.getByText("Pagos fijos registrados")).toBeTruthy();
+    expect(screen.getByText("Falta registrar")).toBeTruthy();
     expect(screen.queryByText("Gastos fijos mensuales")).toBeNull();
   });
 
@@ -86,6 +127,8 @@ describe("SettingsPlaceholder", () => {
     expect(screen.getAllByText("Gastos fijos").length).toBeGreaterThan(0);
     expect(screen.getByText("Nuevo gasto fijo")).toBeTruthy();
     expect(screen.getByText("Nombre")).toBeTruthy();
+    expect(screen.getByText("Día estimado de pago")).toBeTruthy();
+    expect(screen.getAllByText("Categoría").length).toBeGreaterThan(0);
     expect(screen.getByText("Agregar gasto fijo")).toBeTruthy();
   });
 

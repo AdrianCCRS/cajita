@@ -26,6 +26,8 @@ type RegisterExpenseInput = BaseTransactionInput & {
   categoryId: string;
   categoryName: string;
   expenseType: ExpenseType;
+  fixedExpenseId?: string;
+  fixedExpenseName?: string;
 };
 
 type RegisterWithdrawalInput = BaseTransactionInput;
@@ -97,6 +99,8 @@ export async function registerExpense(input: RegisterExpenseInput): Promise<Tran
     costAtTime: null,
     categoryId: input.categoryId,
     categoryName: input.categoryName,
+    fixedExpenseId: input.fixedExpenseId ?? null,
+    fixedExpenseName: input.fixedExpenseName ?? null,
     expenseType: input.expenseType,
     paymentMethod: input.paymentMethod,
     notes: input.notes ?? "",

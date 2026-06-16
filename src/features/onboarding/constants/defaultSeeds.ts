@@ -62,12 +62,15 @@ export const defaultServices: Service[] = [
 ];
 
 export const defaultFixedExpenses: FixedExpense[] = [
-  { id: "fe_arriendo", name: "Arriendo", amount: 0, isActive: true, createdAt: "", updatedAt: "" },
-  { id: "fe_internet", name: "Internet", amount: 0, isActive: true, createdAt: "", updatedAt: "" },
+  { id: "fe_arriendo", name: "Arriendo", amount: 0, categoryId: "cat_arriendo", categoryName: "Arriendo", dueDay: 5, isActive: true, createdAt: "", updatedAt: "" },
+  { id: "fe_internet", name: "Internet", amount: 0, categoryId: "cat_servicios_publicos", categoryName: "Servicios públicos", dueDay: 10, isActive: true, createdAt: "", updatedAt: "" },
   {
     id: "fe_servicios_publicos",
     name: "Servicios públicos",
     amount: 0,
+    categoryId: "cat_servicios",
+    categoryName: "Servicios",
+    dueDay: 15,
     isActive: true,
     createdAt: "",
     updatedAt: "",

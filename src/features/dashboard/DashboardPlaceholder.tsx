@@ -20,6 +20,7 @@ import {
   getBreakEvenProgress,
   getDailySuggestedGoal,
   getEstimatedProfit,
+  getMonthlyFixedExpensePayments,
   getMonthlyExpenses,
   getMonthlyIncome,
   getMonthlyPersonalVouchers,
@@ -27,7 +28,9 @@ import {
   getNetProfit,
   getOwnerTotalReceived,
   getOwnerSalaryPending,
+  getPendingFixedExpensesForMonth,
   getSalaryUsagePercentage,
+  getTotalFixedExpenses,
   groupPersonalVouchersByCategory,
 } from "../../shared/utils/financials";
 import { DailyIncomeTrendChart } from "./DailyIncomeTrendChart";
@@ -94,6 +97,9 @@ export function DashboardPlaceholder() {
   const monthlyExpenses = getMonthlyExpenses(transactions, year, month);
   const monthlyWithdrawals = getMonthlyWithdrawals(transactions, year, month);
   const monthlyPersonalVouchers = getMonthlyPersonalVouchers(transactions, year, month);
+  const monthlyFixedCommitments = getTotalFixedExpenses(fixedExpenses);
+  const monthlyFixedPayments = getMonthlyFixedExpensePayments(transactions, year, month);
+  const pendingFixedPayments = getPendingFixedExpensesForMonth(fixedExpenses, transactions, year, month);
   const ownerTotalReceived = getOwnerTotalReceived(monthlyWithdrawals, monthlyPersonalVouchers);
   const todayIncome = transactions
     .filter((transaction) => transaction.type === "income" && isToday(transaction.date))
@@ -268,6 +274,27 @@ export function DashboardPlaceholder() {
               data={weeklyChartData}
               onRegisterIncome={() => openRegister("income")}
             />
+            <Card className="ui-card wide-card">
+              <Card.Content>
+                <div className="section-heading">
+                  <div className="section-subheading">
+                    <span>Pagos fijos del mes</span>
+                    <strong>{formatCurrency(monthlyFixedCommitments)}</strong>
+                  </div>
+                </div>
+                <div className="summary-metrics">
+                  <div>
+                    <span>Ya registrados como gasto</span>
+                    <b>{formatCurrency(monthlyFixedPayments)}</b>
+                  </div>
+                  <div>
+                    <span>Pendientes por registrar</span>
+                    <b>{formatCurrency(pendingFixedPayments)}</b>
+                  </div>
+                </div>
+                <p className="hint-text">La meta mínima usa todos los pagos fijos. Los gastos reales solo suben cuando registras el pago.</p>
+              </Card.Content>
+            </Card>
             <Card className="ui-card wide-card">
               <Card.Content>
                 <div className="metric-gauge-card">

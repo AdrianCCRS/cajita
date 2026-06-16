@@ -64,6 +64,8 @@ type TransactionInput =
       categoryId: string;
       amount: number;
       expenseType: ExpenseType;
+      fixedExpenseId?: string;
+      fixedExpenseName?: string;
       paymentMethod: PaymentMethod;
       date: string;
       notes?: string;
@@ -97,7 +99,7 @@ type SpaData = SpaState & {
   deleteRawMaterial: (id: string) => Promise<void>;
   upsertServiceMaterial: (serviceId: string, input: ServiceMaterialInput) => Promise<void>;
   deleteServiceMaterial: (serviceId: string, materialId: string) => Promise<void>;
-  upsertFixedExpense: (input: Pick<FixedExpense, "name" | "amount"> & { id?: string }) => Promise<void>;
+  upsertFixedExpense: (input: Pick<FixedExpense, "name" | "amount"> & Partial<Pick<FixedExpense, "categoryId" | "categoryName" | "dueDay">> & { id?: string }) => Promise<void>;
   updateSalaryTarget: (salaryTarget: number) => Promise<void>;
   updateAppAccentColor: (color: string) => Promise<void>;
   resetAppAccentColor: () => Promise<void>;
@@ -249,6 +251,8 @@ function buildTransaction(input: TransactionInput, state: SpaState): Transaction
       costAtTime: null,
       categoryId: selectedCategory?.id ?? input.categoryId,
       categoryName: selectedCategory?.name ?? "Otros",
+      fixedExpenseId: input.fixedExpenseId ?? null,
+      fixedExpenseName: input.fixedExpenseName ?? null,
       personalCategoryId: null,
       personalCategoryName: null,
       expenseType: input.expenseType,
@@ -524,6 +528,8 @@ export function SpaDataProvider({ children }: { children: ReactNode }) {
               categoryId: selectedCategory?.id ?? input.categoryId,
               categoryName: selectedCategory?.name ?? "Otros",
               expenseType: input.expenseType,
+              fixedExpenseId: input.fixedExpenseId,
+              fixedExpenseName: input.fixedExpenseName,
               paymentMethod: input.paymentMethod,
               notes: input.notes,
             });
@@ -825,12 +831,16 @@ export function SpaDataProvider({ children }: { children: ReactNode }) {
       async upsertFixedExpense(input) {
         const timestamp = new Date().toISOString();
         const id = input.id ?? createId("fixed");
+        const previousExpense = state.fixedExpenses.find((item) => item.id === id);
         const nextExpense: FixedExpense = {
           id,
           name: input.name,
           amount: input.amount,
+          categoryId: input.categoryId ?? previousExpense?.categoryId ?? null,
+          categoryName: input.categoryName ?? previousExpense?.categoryName ?? null,
+          dueDay: input.dueDay ?? previousExpense?.dueDay ?? 1,
           isActive: true,
-          createdAt: state.fixedExpenses.find((item) => item.id === id)?.createdAt ?? timestamp,
+          createdAt: previousExpense?.createdAt ?? timestamp,
           updatedAt: timestamp,
         };
 

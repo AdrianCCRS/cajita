@@ -29,6 +29,26 @@ export function getTotalFixedExpenses(fixedExpenses: FixedExpense[]): number {
     .reduce((total, expense) => total + expense.amount, 0);
 }
 
+export function getMonthlyFixedExpensePayments(transactions: Transaction[], year: number, month: number): number {
+  return transactions
+    .filter(
+      (transaction) =>
+        transaction.type === "expense" &&
+        transaction.expenseType === "fixed" &&
+        isInMonth(transaction.date, year, month),
+    )
+    .reduce((total, transaction) => total + transaction.amount, 0);
+}
+
+export function getPendingFixedExpensesForMonth(
+  fixedExpenses: FixedExpense[],
+  transactions: Transaction[],
+  year: number,
+  month: number,
+): number {
+  return Math.max(0, getTotalFixedExpenses(fixedExpenses) - getMonthlyFixedExpensePayments(transactions, year, month));
+}
+
 export function getBreakEvenPoint(fixedExpenses: FixedExpense[], transactions: Transaction[]): number | null {
   const incomeTransactions = transactions.filter(
     (transaction) =>

@@ -54,6 +54,8 @@ export function getRawMaterialBaseUnit(measurementType: z.infer<typeof rawMateri
 export const fixedExpenseSchema = z.object({
   name: z.string().trim().min(1, "Escribe el nombre del gasto."),
   amount: moneySchema,
+  categoryId: z.string().trim().optional(),
+  dueDay: z.coerce.number().int("El día debe ser un número entero.").min(1, "El día debe estar entre 1 y 31.").max(31, "El día debe estar entre 1 y 31.").optional(),
 });
 
 export const salarySchema = z.object({
