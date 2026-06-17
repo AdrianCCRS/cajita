@@ -87,6 +87,9 @@ export type FixedExpense = {
   id: string;
   name: string;
   amount: number;
+  categoryId?: string | null;
+  categoryName?: string | null;
+  dueDay?: number | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -141,9 +144,24 @@ export type Transaction = {
   materialsSnapshot?: Array<Pick<ServiceMaterial, "rawMaterialId" | "rawMaterialName" | "servicesCovered" | "quantityUsed" | "unitType" | "unitCostSnapshot" | "totalCost">>;
   categoryId?: string | null;
   categoryName?: string | null;
+  fixedExpenseId?: string | null;
+  fixedExpenseName?: string | null;
   personalCategoryId?: string | null;
   personalCategoryName?: string | null;
   expenseType?: ExpenseType | null;
+};
+
+export type RegisterExpensePrefill = {
+  amount?: number;
+  categoryId?: string;
+  expenseType?: ExpenseType;
+  fixedExpenseId?: string;
+  fixedExpenseName?: string;
+  notes?: string;
+};
+
+export type RegisterPrefill = {
+  expense?: RegisterExpensePrefill;
 };
 
 export type EducationalConcept = {

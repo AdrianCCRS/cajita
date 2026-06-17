@@ -116,7 +116,7 @@ describe("SpaDataContext — modo local", () => {
     expect(transaction!.serviceId).toBe("svc_manicura_tradicional");
     expect(transaction!.serviceName).toBe("Manicura tradicional");
     expect(transaction!.priceAtTime).toBe(35000);
-    expect(transaction!.costAtTime).toBe(9000);
+    expect(transaction!.costAtTime).toBe(0);
     expect(transaction!.notes).toBe("Cliente frecuente");
 
     const state = ref.current!.getState();

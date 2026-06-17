@@ -5,12 +5,14 @@ import {
   getEstimatedProfit,
   getExpensesByCategory,
   getMonthlyExpenses,
+  getMonthlyFixedExpensePayments,
   getMonthlyIncome,
   getMonthlyPersonalVouchers,
   getMonthlyWithdrawals,
   getNetProfit,
   getOwnerTotalReceived,
   getOwnerSalaryPending,
+  getPendingFixedExpensesForMonth,
   getSalaryUsagePercentage,
   groupPersonalVouchersByCategory,
   getServiceMargin,
@@ -61,6 +63,18 @@ const transactions: Transaction[] = [
   },
   {
     ...baseTransaction,
+    id: "fixed-payment-1",
+    type: "expense",
+    amount: 300000,
+    date: "2026-06-05",
+    categoryId: "category-rent",
+    categoryName: "Arriendo",
+    fixedExpenseId: "fixed-1",
+    fixedExpenseName: "Arriendo",
+    expenseType: "fixed",
+  },
+  {
+    ...baseTransaction,
     id: "withdrawal-1",
     type: "withdrawal",
     amount: 20000,
@@ -93,11 +107,18 @@ const fixedExpenses: FixedExpense[] = [
 describe("financials", () => {
   it("keeps income, expenses and owner salary separated", () => {
     expect(getMonthlyIncome(transactions, 2026, 6)).toBe(85000);
-    expect(getMonthlyExpenses(transactions, 2026, 6)).toBe(15000);
+    expect(getMonthlyExpenses(transactions, 2026, 6)).toBe(315000);
     expect(getMonthlyWithdrawals(transactions, 2026, 6)).toBe(20000);
     expect(getMonthlyPersonalVouchers(transactions, 2026, 6)).toBe(12000);
-    expect(getEstimatedProfit(85000, 15000)).toBe(70000);
-    expect(getNetProfit(85000, 15000, 20000, 12000)).toBe(38000);
+    expect(getEstimatedProfit(85000, 315000)).toBe(-230000);
+    expect(getNetProfit(85000, 315000, 20000, 12000)).toBe(-262000);
+  });
+
+  it("separates configured fixed commitments from fixed payments registered in the month", () => {
+    expect(getTotalFixedExpenses(fixedExpenses)).toBe(800000);
+    expect(getMonthlyFixedExpensePayments(transactions, 2026, 6)).toBe(300000);
+    expect(getPendingFixedExpensesForMonth(fixedExpenses, transactions, 2026, 6)).toBe(500000);
+    expect(getPendingFixedExpensesForMonth(fixedExpenses, transactions, 2026, 7)).toBe(800000);
   });
 
   it("calculates break even only when sales have price and cost snapshots", () => {
@@ -125,6 +146,7 @@ describe("financials", () => {
     expect(getTopServiceBySales(transactions)?.serviceName).toBe("Manicura");
     expect(getTopServiceByRevenue(transactions)?.serviceName).toBe("Cepillado");
     expect(getExpensesByCategory(transactions)).toEqual([
+      { categoryId: "category-rent", categoryName: "Arriendo", total: 300000 },
       { categoryId: "category-1", categoryName: "Insumos", total: 15000 },
     ]);
     expect(groupPersonalVouchersByCategory(transactions)).toEqual([

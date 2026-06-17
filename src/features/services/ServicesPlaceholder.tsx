@@ -1,16 +1,23 @@
 import { BadgeDollarSign, Calculator, FlaskConical, Package, Pencil, Plus, Power, RotateCcw, Scissors, Trash2 } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
+import Chart from "react-apexcharts";
+import type { ApexOptions } from "apexcharts";
 import { Table } from "@heroui/react";
 import { BottomSheet, Button, Card, EmptyState, Input, Label, MoneyField, ScreenHero, Tabs, TextField } from "../../shared/components/ui";
+import { TablePagination } from "../../shared/components/TablePagination";
 import { useSpaData } from "../../shared/data/SpaDataContext";
+import { useTableSortPagination, type SortConfig } from "../../shared/hooks/useTableSortPagination";
 import type { MeasurementType, PurchaseUnit, RawMaterial, Service, ServiceMaterial } from "../../shared/types/domain";
 import { formatCurrency } from "../../shared/utils/formatCurrency";
 import { getServiceMargin } from "../../shared/utils/financials";
+import { getRawMaterialsByCostContribution, getRawMaterialsByServiceCount } from "../../shared/utils/rawMaterialsCharts";
 import { buildRawMaterialCalculation, getPurchaseUnits } from "../../shared/utils/rawMaterials";
 import { rawMaterialSchema, serviceMaterialSchema, serviceSchema } from "../../shared/validation/schemas";
 
 type ServiceSheetMode = "create" | "edit";
 type ServicesTab = "services" | "materials";
+type ServiceSortColumn = "name" | "price" | "cost" | "margin" | "status";
+type MaterialSortColumn = "name" | "purchase" | "unitCost" | "status";
 type MaterialSheetMode = "create" | "edit";
 type ServiceMaterialsSheetMode = "list" | "add";
 type MaterialStatusFilter = "all" | "active" | "inactive";
@@ -87,6 +94,44 @@ export function ServicesPlaceholder() {
       return matchesQuery && matchesStatus;
     });
   }, [materialQuery, materialStatusFilter, rawMaterials]);
+
+  const serviceSortFns: Record<ServiceSortColumn, (a: Service, b: Service) => number> = {
+    name: (a, b) => a.name.localeCompare(b.name, "es-CO"),
+    price: (a, b) => a.defaultPrice - b.defaultPrice,
+    cost: (a, b) => a.estimatedCost - b.estimatedCost,
+    margin: (a, b) => getServiceMargin(a) - getServiceMargin(b),
+    status: (a, b) => Number(a.isActive) - Number(b.isActive),
+  };
+
+  const serviceTable = useTableSortPagination({
+    data: services,
+    defaultSort: { column: "name", direction: "asc" },
+    defaultPageSize: 10,
+    sortFns: serviceSortFns,
+  });
+
+  const materialSortFns: Record<MaterialSortColumn, (a: RawMaterial, b: RawMaterial) => number> = {
+    name: (a, b) => a.name.localeCompare(b.name, "es-CO"),
+    purchase: (a, b) => a.purchasePrice - b.purchasePrice,
+    unitCost: (a, b) => a.unitCost - b.unitCost,
+    status: (a, b) => Number(a.isActive) - Number(b.isActive),
+  };
+
+  const materialsTable = useTableSortPagination({
+    data: filteredRawMaterials,
+    defaultSort: { column: "name", direction: "asc" },
+    defaultPageSize: 10,
+    sortFns: materialSortFns,
+  });
+
+  const costContributionData = useMemo(
+    () => getRawMaterialsByCostContribution(serviceMaterialsByServiceId, rawMaterials),
+    [serviceMaterialsByServiceId, rawMaterials],
+  );
+  const usageCountData = useMemo(
+    () => getRawMaterialsByServiceCount(serviceMaterialsByServiceId, rawMaterials),
+    [serviceMaterialsByServiceId, rawMaterials],
+  );
   const currentServiceMaterials = selectedService ? serviceMaterialsByServiceId[selectedService.id] ?? [] : [];
   const currentServiceMaterialsTotal = currentServiceMaterials.reduce((total, material) => total + material.totalCost, 0);
   const selectedRawMaterial = activeRawMaterials.find((material) => material.id === selectedRawMaterialId);
@@ -365,16 +410,26 @@ export function ServicesPlaceholder() {
                     <caption>Servicios configurados</caption>
                     <thead>
                       <tr>
-                        <th scope="col">Servicio</th>
-                        <th scope="col">Precio</th>
-                        <th scope="col" className="optional-column">Costo</th>
-                        <th scope="col" className="optional-column">Deja</th>
-                        <th scope="col">Estado</th>
+                        <th aria-sort={serviceTable.sort.column === "name" ? (serviceTable.sort.direction === "asc" ? "ascending" : "descending") : "none"} scope="col" onClick={() => serviceTable.toggleSort("name")}>
+                          Servicio <span className="sort-indicator">{serviceTable.sort.column === "name" ? (serviceTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                        </th>
+                        <th aria-sort={serviceTable.sort.column === "price" ? (serviceTable.sort.direction === "asc" ? "ascending" : "descending") : "none"} scope="col" onClick={() => serviceTable.toggleSort("price")}>
+                          Precio <span className="sort-indicator">{serviceTable.sort.column === "price" ? (serviceTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                        </th>
+                        <th aria-sort={serviceTable.sort.column === "cost" ? (serviceTable.sort.direction === "asc" ? "ascending" : "descending") : "none"} className="optional-column" scope="col" onClick={() => serviceTable.toggleSort("cost")}>
+                          Costo <span className="sort-indicator">{serviceTable.sort.column === "cost" ? (serviceTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                        </th>
+                        <th aria-sort={serviceTable.sort.column === "margin" ? (serviceTable.sort.direction === "asc" ? "ascending" : "descending") : "none"} className="optional-column" scope="col" onClick={() => serviceTable.toggleSort("margin")}>
+                          Deja <span className="sort-indicator">{serviceTable.sort.column === "margin" ? (serviceTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                        </th>
+                        <th aria-sort={serviceTable.sort.column === "status" ? (serviceTable.sort.direction === "asc" ? "ascending" : "descending") : "none"} scope="col" onClick={() => serviceTable.toggleSort("status")}>
+                          Estado <span className="sort-indicator">{serviceTable.sort.column === "status" ? (serviceTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                        </th>
                         <th scope="col">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {services.map((service) => (
+                      {serviceTable.paginatedData.map((service) => (
                         <tr className={service.isActive ? "" : "muted"} key={service.id}>
                           <th scope="row">
                             <span>{service.name}</span>
@@ -427,6 +482,11 @@ export function ServicesPlaceholder() {
                     </tbody>
                   </table>
                 </div>
+                <TablePagination
+                  pagination={serviceTable.pagination}
+                  onPageChange={serviceTable.setCurrentPage}
+                  onPageSizeChange={serviceTable.changePageSize}
+                />
               </Card.Content>
             </Card>
           ) : (
@@ -486,20 +546,64 @@ export function ServicesPlaceholder() {
           {rawMaterials.length ? (
             <Card className="ui-card service-table-card">
               <Card.Content>
-                {filteredRawMaterials.length ? (
-                  <Table className="service-table heroui-data-table" aria-label="Insumos configurados">
-                    <Table.ScrollContainer>
-                      <Table.Content>
-                        <caption>Insumos configurados</caption>
-                        <Table.Header>
-                          <Table.Column isRowHeader>Insumo</Table.Column>
-                          <Table.Column>Compra</Table.Column>
-                          <Table.Column className="optional-column">Costo base</Table.Column>
-                          <Table.Column>Estado</Table.Column>
-                          <Table.Column>Acciones</Table.Column>
-                        </Table.Header>
-                        <Table.Body>
-                          {filteredRawMaterials.map((material) => (
+                  {filteredRawMaterials.length ? (
+                    <Table className="service-table heroui-data-table" aria-label="Insumos configurados">
+                      <Table.ScrollContainer>
+                        <Table.Content>
+                          <caption>Insumos configurados</caption>
+                          <Table.Header>
+                            <Table.Column isRowHeader>
+                              <span
+                                aria-sort={materialsTable.sort.column === "name" ? (materialsTable.sort.direction === "asc" ? "ascending" : "descending") : "none"}
+                                className="sortable-col-header"
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => materialsTable.toggleSort("name")}
+                                onKeyDown={(e) => { if (e.key === "Enter") materialsTable.toggleSort("name"); }}
+                              >
+                                Insumo <span className="sort-indicator">{materialsTable.sort.column === "name" ? (materialsTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                              </span>
+                            </Table.Column>
+                            <Table.Column>
+                              <span
+                                aria-sort={materialsTable.sort.column === "purchase" ? (materialsTable.sort.direction === "asc" ? "ascending" : "descending") : "none"}
+                                className="sortable-col-header"
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => materialsTable.toggleSort("purchase")}
+                                onKeyDown={(e) => { if (e.key === "Enter") materialsTable.toggleSort("purchase"); }}
+                              >
+                                Compra <span className="sort-indicator">{materialsTable.sort.column === "purchase" ? (materialsTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                              </span>
+                            </Table.Column>
+                            <Table.Column className="optional-column">
+                              <span
+                                aria-sort={materialsTable.sort.column === "unitCost" ? (materialsTable.sort.direction === "asc" ? "ascending" : "descending") : "none"}
+                                className="sortable-col-header"
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => materialsTable.toggleSort("unitCost")}
+                                onKeyDown={(e) => { if (e.key === "Enter") materialsTable.toggleSort("unitCost"); }}
+                              >
+                                Costo base <span className="sort-indicator">{materialsTable.sort.column === "unitCost" ? (materialsTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                              </span>
+                            </Table.Column>
+                            <Table.Column>
+                              <span
+                                aria-sort={materialsTable.sort.column === "status" ? (materialsTable.sort.direction === "asc" ? "ascending" : "descending") : "none"}
+                                className="sortable-col-header"
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => materialsTable.toggleSort("status")}
+                                onKeyDown={(e) => { if (e.key === "Enter") materialsTable.toggleSort("status"); }}
+                              >
+                                Estado <span className="sort-indicator">{materialsTable.sort.column === "status" ? (materialsTable.sort.direction === "asc" ? "▲" : "▼") : "▸"}</span>
+                              </span>
+                            </Table.Column>
+                            <Table.Column>Acciones</Table.Column>
+                          </Table.Header>
+                          <Table.Body>
+                            {materialsTable.paginatedData.map((material) => (
                             <Table.Row className={material.isActive ? "" : "muted"} key={material.id}>
                               <Table.Cell>
                                 <span>{material.name}</span>
@@ -535,14 +639,21 @@ export function ServicesPlaceholder() {
                         </Table.Body>
                       </Table.Content>
                     </Table.ScrollContainer>
-                  </Table>
-                ) : (
-                  <div className="inline-empty-state">
-                    <strong>No hay insumos con ese filtro.</strong>
-                    <p>Prueba con otro nombre o cambia el estado.</p>
-                  </div>
-                )}
-              </Card.Content>
+                    </Table>
+                  ) : (
+                    <div className="inline-empty-state">
+                      <strong>No hay insumos con ese filtro.</strong>
+                      <p>Prueba con otro nombre o cambia el estado.</p>
+                    </div>
+                  )}
+                  {materialsTable.pagination.totalItems > 0 ? (
+                    <TablePagination
+                      pagination={materialsTable.pagination}
+                      onPageChange={materialsTable.setCurrentPage}
+                      onPageSizeChange={materialsTable.changePageSize}
+                    />
+                  ) : null}
+                </Card.Content>
             </Card>
           ) : (
             <EmptyState
@@ -551,6 +662,74 @@ export function ServicesPlaceholder() {
               title="Aún no has configurado materias primas."
               onAction={openCreateRawMaterialSheet}
             />
+          )}
+
+          {costContributionData.hasData ? (
+            <Card className="ui-card wide-card dashboard-chart-card">
+              <Card.Content>
+                <div className="section-heading">
+                  <div className="section-subheading">
+                    <span>Costo total por insumo en servicios</span>
+                    <strong>Insumos que más aportan al costo</strong>
+                  </div>
+                </div>
+                <div
+                  aria-label="Gráfica de insumos que más aportan al costo"
+                  className="dashboard-chart"
+                  style={{ minHeight: Math.max(costContributionData.labels.length * 44, 200) }}
+                >
+                  <Chart
+                    height="100%"
+                    options={materialsBarOptions(costContributionData, true)}
+                    series={[{ name: "Costo total", data: costContributionData.series }]}
+                    type="bar"
+                    width="100%"
+                  />
+                </div>
+              </Card.Content>
+            </Card>
+          ) : (
+            <Card className="ui-card wide-card">
+              <Card.Content>
+                <div className="chart-empty-state">
+                  <p>Asocia insumos a tus servicios para ver cuáles aportan más al costo.</p>
+                </div>
+              </Card.Content>
+            </Card>
+          )}
+
+          {usageCountData.hasData ? (
+            <Card className="ui-card wide-card dashboard-chart-card">
+              <Card.Content>
+                <div className="section-heading">
+                  <div className="section-subheading">
+                    <span>Cantidad de servicios por insumo</span>
+                    <strong>Insumos más usados</strong>
+                  </div>
+                </div>
+                <div
+                  aria-label="Gráfica de insumos más usados en servicios"
+                  className="dashboard-chart"
+                  style={{ minHeight: Math.max(usageCountData.labels.length * 44, 200) }}
+                >
+                  <Chart
+                    height="100%"
+                    options={materialsBarOptions(usageCountData, false)}
+                    series={[{ name: "Servicios", data: usageCountData.series }]}
+                    type="bar"
+                    width="100%"
+                  />
+                </div>
+              </Card.Content>
+            </Card>
+          ) : (
+            <Card className="ui-card wide-card">
+              <Card.Content>
+                <div className="chart-empty-state">
+                  <p>Asocia insumos a tus servicios para ver cuáles usas con más frecuencia.</p>
+                </div>
+              </Card.Content>
+            </Card>
           )}
         </>
       )}
@@ -865,4 +1044,88 @@ function MaterialRow({ material, onDelete }: { material: ServiceMaterial; onDele
 
 function formatQuantity(value: number, unit: string) {
   return `${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 }).format(value)} ${unitLabels[unit as PurchaseUnit] ?? unit}`;
+}
+
+const materialsBarPalette = [
+  "oklch(0.72 0.16 78)",
+  "oklch(0.62 0.18 45)",
+  "oklch(0.52 0.17 25)",
+  "oklch(0.55 0.15 325)",
+  "oklch(0.53 0.14 285)",
+  "oklch(0.52 0.12 205)",
+  "oklch(0.57 0.13 158)",
+];
+
+function materialsBarOptions(
+  data: { labels: string[]; series: number[] },
+  isCurrency: boolean,
+): ApexOptions {
+  return {
+    chart: {
+      fontFamily: "inherit",
+      parentHeightOffset: 0,
+      toolbar: { show: false },
+      zoom: { enabled: false },
+    },
+    colors: [
+      ({ dataPointIndex }: { dataPointIndex: number }) =>
+        materialsBarPalette[dataPointIndex % materialsBarPalette.length] ?? "var(--salary)",
+    ],
+    dataLabels: { enabled: false },
+    grid: {
+      borderColor: "var(--line)",
+      strokeDashArray: 4,
+      xaxis: { lines: { show: false } },
+      yaxis: { lines: { show: true } },
+    },
+    legend: { show: false },
+    plotOptions: {
+      bar: {
+        borderRadius: 5,
+        horizontal: true,
+        barHeight: "60%",
+        distributed: true,
+        dataLabels: { position: "top" },
+      },
+    },
+    states: {
+      hover: { filter: { type: "lighten" } },
+    },
+    tooltip: {
+      y: {
+        formatter: (value) =>
+          isCurrency ? formatCurrency(value) : String(Math.round(Number(value))),
+      },
+    },
+    xaxis: {
+      categories: data.labels,
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+      labels: {
+        formatter: (value) =>
+          isCurrency ? formatShortMaterialsCurrency(Number(value)) : String(Math.round(Number(value))),
+        style: {
+          colors: "var(--muted)",
+          fontSize: "12px",
+          fontWeight: 800,
+        },
+      },
+    },
+    yaxis: {
+      labels: {
+        formatter: (value) => String(value),
+        style: {
+          colors: "var(--foreground)",
+          fontSize: "13px",
+          fontWeight: 700,
+        },
+      },
+    },
+  };
+}
+
+function formatShortMaterialsCurrency(value: number) {
+  if (Math.abs(value) >= 1000000) return `${Math.round(value / 1000000)}M`;
+  if (Math.abs(value) >= 1000) return `${Math.round(value / 1000)}K`;
+  return String(Math.round(value));
 }

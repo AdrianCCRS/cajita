@@ -3,7 +3,7 @@ import { useMemo, useState, type FormEvent, type Key } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../shared/auth/AuthContext";
 import { defaultTransactionDate, useSpaData } from "../shared/data/SpaDataContext";
-import type { ExpenseType, PaymentMethod, Transaction, TransactionType } from "../shared/types/domain";
+import type { ExpenseType, PaymentMethod, RegisterPrefill, Transaction, TransactionType } from "../shared/types/domain";
 import { formatCurrency } from "../shared/utils/formatCurrency";
 import { getEstimatedProfit, getMonthlyExpenses, getMonthlyIncome, getMonthlyPersonalVouchers, getMonthlyWithdrawals } from "../shared/utils/financials";
 import { transactionSchema } from "../shared/validation/schemas";
@@ -28,14 +28,16 @@ type Toast = {
 export function AppShell() {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [initialType, setInitialType] = useState<TransactionType>("income");
+  const [registerPrefill, setRegisterPrefill] = useState<RegisterPrefill | undefined>();
   const [toast, setToast] = useState<Toast | null>(null);
   const navigate = useNavigate();
   const { isFirebaseEnabled, signOut, user } = useAuth();
   const { business, isLoading, error, uiSettings, updateThemeMode } = useSpaData();
   const isDarkMode = uiSettings.themeMode === "dark";
 
-  function openRegister(type: TransactionType) {
+  function openRegister(type: TransactionType, prefill?: RegisterPrefill) {
     setInitialType(type);
+    setRegisterPrefill(prefill);
     setIsRegisterOpen(true);
   }
 
@@ -157,6 +159,7 @@ export function AppShell() {
       {isRegisterOpen ? (
         <RegisterMovementSheet
           initialType={initialType}
+          prefill={registerPrefill}
           onClose={() => setIsRegisterOpen(false)}
           onSaved={(message) => showToast({ kind: "success", message })}
         />
@@ -223,10 +226,12 @@ function QuickActionFab({ onSelect }: { onSelect: (type: TransactionType) => voi
 
 function RegisterMovementSheet({
   initialType,
+  prefill,
   onClose,
   onSaved,
 }: {
   initialType: TransactionType;
+  prefill?: RegisterPrefill;
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
@@ -236,14 +241,14 @@ function RegisterMovementSheet({
   const activePersonalCategories = personalExpenseCategories.filter((category) => category.isActive);
   const [type, setType] = useState<TransactionType>(initialType);
   const [serviceId, setServiceId] = useState(activeServices[0]?.id ?? "");
-  const [categoryId, setCategoryId] = useState(activeCategories[0]?.id ?? "");
+  const [categoryId, setCategoryId] = useState(prefill?.expense?.categoryId ?? activeCategories[0]?.id ?? "");
   const [personalCategoryId, setPersonalCategoryId] = useState(activePersonalCategories[0]?.id ?? "");
   const selectedService = activeServices.find((service) => service.id === serviceId);
-  const [amount, setAmount] = useState<number | undefined>(initialType === "income" ? selectedService?.defaultPrice : undefined);
+  const [amount, setAmount] = useState<number | undefined>(prefill?.expense?.amount ?? (initialType === "income" ? selectedService?.defaultPrice : undefined));
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
-  const [expenseType, setExpenseType] = useState<ExpenseType>("variable");
+  const [expenseType, setExpenseType] = useState<ExpenseType>(prefill?.expense?.expenseType ?? "variable");
   const [date, setDate] = useState(defaultTransactionDate());
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState(prefill?.expense?.notes ?? "");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -307,7 +312,17 @@ function RegisterMovementSheet({
         type === "income"
           ? await addTransaction({ type, serviceId, amount: numericAmount, paymentMethod, date, notes })
           : type === "expense"
-            ? await addTransaction({ type, categoryId, amount: numericAmount, expenseType, paymentMethod, date, notes })
+            ? await addTransaction({
+                type,
+                categoryId,
+                amount: numericAmount,
+                expenseType,
+                fixedExpenseId: prefill?.expense?.fixedExpenseId,
+                fixedExpenseName: prefill?.expense?.fixedExpenseName,
+                paymentMethod,
+                date,
+                notes,
+              })
             : type === "withdrawal"
               ? await addTransaction({ type, amount: numericAmount, paymentMethod, date, notes })
               : await addTransaction({ type, personalCategoryId, amount: numericAmount, paymentMethod, date, notes });

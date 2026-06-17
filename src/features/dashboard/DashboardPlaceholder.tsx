@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { Button, Card, HelpDrawer, MetricCard, ProgressBar, ScreenHero, Tabs } from "../../shared/components/ui";
+import { CalendarCheck2, CalendarClock, ReceiptText, Tags } from "lucide-react";
+import { Button, Card, HelpDrawer, ProgressBar, ScreenHero, Tabs } from "../../shared/components/ui";
 import { useSpaData } from "../../shared/data/SpaDataContext";
 import type { Transaction, TransactionType } from "../../shared/types/domain";
 import {
   getDailyIncomeChartData,
   getExpensesByCategoryChartData,
-  getServicesByCountChartData,
-  getServicesByRevenueChartData,
+  getHistoricalMonthlyMetricSparklineData,
+  getMoneyCompositionChartData,
+  getMonthlyMetricSparklineData,
+  getServiceContributionChartData,
   getWeeklyIncomeExpenseChartData,
 } from "../../shared/utils/dashboardCharts";
 import { isToday } from "../../shared/utils/dates";
@@ -17,6 +20,7 @@ import {
   getBreakEvenProgress,
   getDailySuggestedGoal,
   getEstimatedProfit,
+  getMonthlyFixedExpensePayments,
   getMonthlyExpenses,
   getMonthlyIncome,
   getMonthlyPersonalVouchers,
@@ -24,14 +28,15 @@ import {
   getNetProfit,
   getOwnerTotalReceived,
   getOwnerSalaryPending,
+  getPendingFixedExpensesForMonth,
   getSalaryUsagePercentage,
+  getTotalFixedExpenses,
   groupPersonalVouchersByCategory,
 } from "../../shared/utils/financials";
 import { DailyIncomeTrendChart } from "./DailyIncomeTrendChart";
 import { DashboardChartCard } from "./DashboardChartCard";
 import { ExpensesByCategoryChart } from "./ExpensesByCategoryChart";
-import { TopServicesChart } from "./TopServicesChart";
-
+import { MetricDonutCard, MetricGaugeChart, MetricSparklineCard } from "../../shared/components/charts";
 type DashboardHelpKey = "income" | "expense" | "business" | "salary" | "profit" | "breakEven";
 type DashboardTab = "today" | "month" | "history";
 
@@ -92,6 +97,12 @@ export function DashboardPlaceholder() {
   const monthlyExpenses = getMonthlyExpenses(transactions, year, month);
   const monthlyWithdrawals = getMonthlyWithdrawals(transactions, year, month);
   const monthlyPersonalVouchers = getMonthlyPersonalVouchers(transactions, year, month);
+  const monthlyFixedCommitments = getTotalFixedExpenses(fixedExpenses);
+  const monthlyFixedPayments = getMonthlyFixedExpensePayments(transactions, year, month);
+  const pendingFixedPayments = getPendingFixedExpensesForMonth(fixedExpenses, transactions, year, month);
+  const fixedPaymentProgress = monthlyFixedCommitments > 0
+    ? (monthlyFixedPayments / monthlyFixedCommitments) * 100
+    : 0;
   const ownerTotalReceived = getOwnerTotalReceived(monthlyWithdrawals, monthlyPersonalVouchers);
   const todayIncome = transactions
     .filter((transaction) => transaction.type === "income" && isToday(transaction.date))
@@ -111,16 +122,47 @@ export function DashboardPlaceholder() {
   const salaryPending = getOwnerSalaryPending(financialSettings.salaryTarget, monthlyWithdrawals, monthlyPersonalVouchers);
   const breakEven = getBreakEvenPoint(fixedExpenses, transactions);
   const breakEvenProgress = breakEven ? getBreakEvenProgress(monthlyIncome, breakEven) : 0;
+  const breakEvenGaugeColor =
+    breakEvenProgress >= 100 ? "var(--profit)" :
+    breakEvenProgress >= 75 ? "var(--income)" :
+    breakEvenProgress >= 50 ? "var(--salary)" :
+    breakEvenProgress >= 25 ? "var(--bill)" :
+    "var(--expense)";
   const salaryProgress = getSalaryUsagePercentage(financialSettings.salaryTarget, ownerTotalReceived);
+  const salaryGaugeColor =
+    salaryProgress >= 100 ? "var(--danger)" :
+    salaryProgress >= 75 ? "var(--expense)" :
+    salaryProgress >= 50 ? "var(--bill)" :
+    salaryProgress >= 25 ? "var(--salary)" :
+    "var(--income)";
+  const voucherSalaryShare = getSalaryUsagePercentage(financialSettings.salaryTarget, monthlyPersonalVouchers);
   const topPersonalVoucherCategory = groupPersonalVouchersByCategory(
     transactions.filter((transaction) => transaction.type === "personal_voucher" && isInCurrentMonth(transaction.date, year, month)),
   )[0];
+  const topPersonalVoucherShare = monthlyPersonalVouchers > 0 && topPersonalVoucherCategory
+    ? (topPersonalVoucherCategory.total / monthlyPersonalVouchers) * 100
+    : 0;
   const weeklyChartData = getWeeklyIncomeExpenseChartData(transactions, year, month);
   const dailyIncomeData = getDailyIncomeChartData(transactions, year, month);
+  const monthlyIncomeSparklineData = getMonthlyMetricSparklineData(transactions, year, month, "income");
+  const monthlyExpensesSparklineData = getMonthlyMetricSparklineData(transactions, year, month, "expense");
+  const monthlyBusinessSparklineData = getMonthlyMetricSparklineData(transactions, year, month, "business");
+  const monthlyOwnerSparklineData = getMonthlyMetricSparklineData(transactions, year, month, "ownerTotal");
+  const monthlyProfitSparklineData = getMonthlyMetricSparklineData(transactions, year, month, "profit");
+  const historicalIncomeSparklineData = getHistoricalMonthlyMetricSparklineData(transactions, "income");
+  const historicalExpensesSparklineData = getHistoricalMonthlyMetricSparklineData(transactions, "expense");
+  const historicalBusinessSparklineData = getHistoricalMonthlyMetricSparklineData(transactions, "business");
+  const historicalProfitSparklineData = getHistoricalMonthlyMetricSparklineData(transactions, "profit");
+  const historicalMoneyComposition = getMoneyCompositionChartData({
+    income: historicalIncome,
+    expenses: historicalExpenses,
+    withdrawals: historicalWithdrawals,
+    personalVouchers: historicalPersonalVouchers,
+  });
+  const monthlyServiceContribution = getServiceContributionChartData(transactions, year, month);
+  const historicalServiceContribution = getServiceContributionChartData(transactions);
   const categoryExpenseData = getExpensesByCategoryChartData(transactions, year, month);
   const historicalCategoryExpenseData = getExpensesByCategoryChartData(transactions);
-  const servicesByCountData = getServicesByCountChartData(transactions);
-  const servicesByRevenueData = getServicesByRevenueChartData(transactions);
   const selectedHelp = helpKey ? helpContent[helpKey] : null;
   const summary = getDashboardSummary({
     activeTab,
@@ -154,13 +196,6 @@ export function DashboardPlaceholder() {
         </Button>
       </div>
 
-      <DashboardSummaryCard
-        description={summary.description}
-        metrics={summary.metrics}
-        title={summary.title}
-        value={summary.value}
-      />
-
       <Tabs
         ariaLabel="Rango del dashboard"
         items={dashboardTabs}
@@ -171,27 +206,32 @@ export function DashboardPlaceholder() {
       <div className="dashboard-tab-panel" role="tabpanel">
         {activeTab === "today" ? (
           <>
-            <div className="placeholder-grid compact-grid">
-              <MetricCard
-                description={!todayIncome ? "Hoy todavía no hay ventas registradas. ¡Empieza cuando quieras!" : "Lo que vendiste hoy."}
+            <div className="dashboard-kpi-grid">
+              <MetricSparklineCard
+                currency
+                data={monthlyIncomeSparklineData}
+                emptyMessage="Hoy todavía no hay ventas registradas. ¡Empieza cuando quieras!"
                 title="Ventas de hoy"
-                tone="income"
-                value={formatCurrency(todayIncome)}
-                onHelp={() => setHelpKey("income")}
+                type="income"
+                value={todayIncome}
+                valueLabel="Ventas"
               />
-              <MetricCard
-                description={todayExpenses ? "Gastos registrados hoy." : "No has registrado gastos hoy."}
+              <MetricSparklineCard
+                currency
+                data={monthlyExpensesSparklineData}
+                emptyMessage="No has registrado gastos hoy."
                 title="Gastos de hoy"
-                tone="expense"
-                value={formatCurrency(todayExpenses)}
-                onHelp={() => setHelpKey("expense")}
+                type="expense"
+                value={todayExpenses}
+                valueLabel="Gastos"
               />
-              <MetricCard
-                description="Ventas menos gastos del día."
+              <MetricSparklineCard
+                currency
+                data={monthlyBusinessSparklineData}
                 title="Dinero de hoy"
-                tone="business"
-                value={formatCurrency(todayBusinessMoney)}
-                onHelp={() => setHelpKey("business")}
+                type="business"
+                value={todayBusinessMoney}
+                valueLabel="Dinero del negocio"
               />
             </div>
             <DailyIncomeTrendChart data={dailyIncomeData} />
@@ -200,96 +240,216 @@ export function DashboardPlaceholder() {
 
         {activeTab === "month" ? (
           <>
+            <div className="dashboard-kpi-grid">
+              <MetricSparklineCard
+                currency
+                data={monthlyIncomeSparklineData}
+                emptyMessage="¡Bienvenida a un nuevo mes! Empieza registrando tu primera venta."
+                title="Ventas del mes"
+                type="income"
+                value={monthlyIncome}
+                valueLabel="Ventas"
+              />
+              <MetricSparklineCard
+                currency
+                data={monthlyExpensesSparklineData}
+                emptyMessage="No has registrado gastos este mes. ¡Eso es buena señal!"
+                title="Gastos del mes"
+                type="expense"
+                value={monthlyExpenses}
+                valueLabel="Gastos"
+              />
+              <MetricSparklineCard
+                currency
+                data={monthlyOwnerSparklineData}
+                title="Mi salario"
+                type="withdrawal"
+                value={ownerTotalReceived}
+                valueLabel="Salario tomado"
+              />
+              <MetricSparklineCard
+                currency
+                data={monthlyProfitSparklineData}
+                title="Ganancia"
+                type="profit"
+                value={netProfit}
+                valueLabel="Después de salario"
+              />
+            </div>
+            <MetricDonutCard
+              currency
+              emptyMessage="Registra ventas para ver cuánto aporta cada servicio."
+              segments={monthlyServiceContribution.segments}
+              subtitle="Porcentaje de ventas por servicio"
+              title="Aporte por servicio del mes"
+              totalLabel="Ventas"
+              totalValue={monthlyServiceContribution.total}
+            />
             <DashboardChartCard
               data={weeklyChartData}
               onRegisterIncome={() => openRegister("income")}
             />
-            <Card className="ui-card wide-card">
-              <Card.Content>
+            <Card className="ui-card wide-card fixed-payments-card">
+              <Card.Content className="fixed-payments-card__content">
                 <div className="section-heading">
                   <div className="section-subheading">
-                    <span>Meta mínima para no perder plata</span>
-                    <strong>{breakEven ? formatCurrency(breakEven) : "Sin datos suficientes"}</strong>
+                    <span>Pagos fijos del mes</span>
+                    <strong>{formatCurrency(monthlyFixedCommitments)}</strong>
                   </div>
-                  {breakEven ? <b>{Math.round(breakEvenProgress)}%</b> : null}
+                  <b>{Math.round(fixedPaymentProgress)}%</b>
                 </div>
-                {breakEven ? (
-                  <>
-                    <ProgressBar aria-label="Avance de meta mínima" className={breakEvenProgress >= 100 ? "" : "progress--expense"} color={breakEvenProgress >= 100 ? "success" : "warning"} value={Math.min(breakEvenProgress, 100)} />
-                    <p>Meta sugerida por día: {formatCurrency(getDailySuggestedGoal(breakEven, 24))}.</p>
-                  </>
-                ) : (
-                  <p>Configura tus gastos fijos para ver cuánto necesitas vender cada mes.</p>
-                )}
-                <Button variant="ghost" onPress={() => setHelpKey("breakEven")}>
-                  Entender esta meta
-                </Button>
+                <div className="metric-gauge-card__visual">
+                  <MetricGaugeChart
+                    label="Pagos fijos"
+                    type="bill"
+                    value={fixedPaymentProgress}
+                  />
+                </div>
+                <div className="fixed-payments-grid">
+                  <div className="fixed-payments-metric fixed-payments-metric--paid">
+                    <CalendarCheck2 aria-hidden="true" size={20} />
+                    <div>
+                      <span>Registrado como gasto</span>
+                      <strong>{formatCurrency(monthlyFixedPayments)}</strong>
+                    </div>
+                  </div>
+                  <div className="fixed-payments-metric fixed-payments-metric--pending">
+                    <CalendarClock aria-hidden="true" size={20} />
+                    <div>
+                      <span>Pendiente por registrar</span>
+                      <strong>{formatCurrency(pendingFixedPayments)}</strong>
+                    </div>
+                  </div>
+                </div>
+                <p className="hint-text">La meta mínima usa todos los pagos fijos. Los gastos reales solo suben cuando registras el pago.</p>
               </Card.Content>
             </Card>
             <Card className="ui-card wide-card">
               <Card.Content>
-                <div className="section-heading">
-                  <div className="section-subheading">
-                    <span>Salario de la dueña</span>
-                    <strong>
-                      {formatCurrency(ownerTotalReceived)} de {formatCurrency(financialSettings.salaryTarget)}
-                    </strong>
+                <div className="metric-gauge-card">
+                  <div className="section-heading">
+                    <div className="section-subheading">
+                      <span>Meta mínima para no perder plata</span>
+                      <strong>{breakEven ? formatCurrency(breakEven) : "Sin datos suficientes"}</strong>
+                    </div>
+                    {breakEven ? <b>{Math.round(breakEvenProgress)}%</b> : null}
                   </div>
-                  <b>{Math.round(salaryProgress)}%</b>
-                </div>
-                <ProgressBar aria-label="Avance de salario" color={salaryPending < 0 ? "warning" : "success"} value={Math.min(salaryProgress, 100)} />
-                <div className="summary-metrics salary-metrics">
-                  <div>
-                    <span>Pagos que ya te hiciste</span>
-                    <b>{formatCurrency(monthlyWithdrawals)}</b>
-                  </div>
-                  <div>
-                    <span>Vales personales</span>
-                    <b>{formatCurrency(monthlyPersonalVouchers)}</b>
-                  </div>
-                  <div>
-                    <span>Total tomado del salario</span>
-                    <b>{formatCurrency(ownerTotalReceived)}</b>
-                  </div>
-                  <div>
-                    <span>{salaryPending < 0 ? "Excedente sobre tu salario" : "Pendiente por pagarte"}</span>
-                    <b>{formatCurrency(Math.abs(salaryPending))}</b>
-                  </div>
-                </div>
-                <p>
-                  {salaryPending < 0
-                    ? `Te pasaste de tu salario objetivo por ${formatCurrency(Math.abs(salaryPending))}.`
-                    : `Te faltan ${formatCurrency(salaryPending)} para completar tu salario objetivo.`}
-                </p>
-                <div className="flex gap-2">
-                  <Button className="btn-business" variant="secondary" onPress={() => openRegister("withdrawal")}>
-                    Registrar pago
-                  </Button>
-                  <Button className="btn-business" variant="secondary" onPress={() => openRegister("personal_voucher")}>
-                    Registrar vale
+                  {breakEven ? (
+                    <>
+                      <div className="metric-gauge-card__visual">
+                        <MetricGaugeChart
+                          color={breakEvenGaugeColor}
+                          label="Meta mínima"
+                          value={breakEvenProgress}
+                        />
+                      </div>
+                      <ProgressBar aria-label="Avance de meta mínima" className={breakEvenProgress >= 100 ? "" : "progress--expense"} color={breakEvenProgress >= 100 ? "success" : "warning"} value={Math.min(breakEvenProgress, 100)} />
+                      <p>Meta sugerida por día: {formatCurrency(getDailySuggestedGoal(breakEven, 24))}.</p>
+                    </>
+                  ) : (
+                    <p>Configura tus gastos fijos para ver cuánto necesitas vender cada mes.</p>
+                  )}
+                  <Button variant="ghost" onPress={() => setHelpKey("breakEven")}>
+                    Entender esta meta
                   </Button>
                 </div>
               </Card.Content>
             </Card>
             <Card className="ui-card wide-card">
               <Card.Content>
+                <div className="metric-gauge-card">
+                  <div className="section-heading">
+                    <div className="section-subheading">
+                      <span>Salario de la dueña</span>
+                      <strong>
+                        {formatCurrency(ownerTotalReceived)} de {formatCurrency(financialSettings.salaryTarget)}
+                      </strong>
+                    </div>
+                    <b>{Math.round(salaryProgress)}%</b>
+                  </div>
+                  <div className="metric-gauge-card__visual">
+                    <MetricGaugeChart
+                      color={salaryGaugeColor}
+                      label="Salario"
+                      value={salaryProgress}
+                    />
+                  </div>
+                  <ProgressBar aria-label="Avance de salario" color={salaryPending < 0 ? "warning" : "success"} value={Math.min(salaryProgress, 100)} />
+                  <div className="summary-metrics salary-metrics">
+                    <div>
+                      <span>Pagos que ya te hiciste</span>
+                      <b>{formatCurrency(monthlyWithdrawals)}</b>
+                    </div>
+                    <div>
+                      <span>Vales personales</span>
+                      <b>{formatCurrency(monthlyPersonalVouchers)}</b>
+                    </div>
+                    <div>
+                      <span>Total tomado del salario</span>
+                      <b>{formatCurrency(ownerTotalReceived)}</b>
+                    </div>
+                    <div>
+                      <span>{salaryPending < 0 ? "Excedente sobre tu salario" : "Pendiente por pagarte"}</span>
+                      <b>{formatCurrency(Math.abs(salaryPending))}</b>
+                    </div>
+                  </div>
+                  <p>
+                    {salaryPending < 0
+                      ? `Te pasaste de tu salario objetivo por ${formatCurrency(Math.abs(salaryPending))}.`
+                      : `Te faltan ${formatCurrency(salaryPending)} para completar tu salario objetivo.`}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button className="btn-business" variant="secondary" onPress={() => openRegister("withdrawal")}>
+                      Registrar pago
+                    </Button>
+                    <Button className="btn-business" variant="secondary" onPress={() => openRegister("personal_voucher")}>
+                      Registrar vale
+                    </Button>
+                  </div>
+                </div>
+              </Card.Content>
+            </Card>
+            <Card className="ui-card wide-card personal-voucher-card">
+              <Card.Content className="personal-voucher-card__content">
                 <div className="section-heading">
                   <div className="section-subheading">
                     <span>Vales personales</span>
                     <strong>{formatCurrency(monthlyPersonalVouchers)}</strong>
                   </div>
                 </div>
-                <p>
-                  Este mes llevas {formatCurrency(monthlyPersonalVouchers)} en vales personales.
-                  {financialSettings.salaryTarget
-                    ? ` Eso equivale al ${Math.round(getSalaryUsagePercentage(financialSettings.salaryTarget, monthlyPersonalVouchers))}% de tu salario objetivo.`
-                    : ""}
-                </p>
-                <p>
-                  {topPersonalVoucherCategory
-                    ? `Categoría con más vales: ${topPersonalVoucherCategory.personalCategoryName}.`
-                    : "Registra un vale para ver tus gastos personales por categoría."}
-                </p>
+                <div className="voucher-summary-grid">
+                  <div className="voucher-highlight">
+                    <ReceiptText aria-hidden="true" size={20} />
+                    <div>
+                      <span>Parte de tu salario usada en vales</span>
+                      <strong>{financialSettings.salaryTarget ? `${Math.round(voucherSalaryShare)}%` : "Sin meta"}</strong>
+                    </div>
+                  </div>
+                  <div className="voucher-progress" aria-label={`Vales personales: ${Math.round(voucherSalaryShare)}% del salario`}>
+                    <span style={{ width: `${Math.min(voucherSalaryShare, 100)}%` }} />
+                  </div>
+                  <div className="voucher-category">
+                    <Tags aria-hidden="true" size={20} />
+                    {topPersonalVoucherCategory ? (
+                      <div>
+                        <span>Categoría con más vales</span>
+                        <strong>{topPersonalVoucherCategory.personalCategoryName}</strong>
+                        <small>
+                          {formatCurrency(topPersonalVoucherCategory.total)} · {Math.round(topPersonalVoucherShare)}% de tus vales
+                        </small>
+                      </div>
+                    ) : (
+                      <div>
+                        <span>Categoría con más vales</span>
+                        <strong>Sin datos todavía</strong>
+                        <small>Registra un vale para ver tus gastos personales por categoría.</small>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <Button className="btn-voucher" variant="secondary" onPress={() => openRegister("personal_voucher")}>
+                  Registrar vale
+                </Button>
               </Card.Content>
             </Card>
             <ExpensesByCategoryChart data={categoryExpenseData} />
@@ -298,9 +458,59 @@ export function DashboardPlaceholder() {
 
         {activeTab === "history" ? (
           <>
+            <div className="dashboard-kpi-grid">
+              <MetricSparklineCard
+                currency
+                data={historicalIncomeSparklineData}
+                title="Ventas históricas"
+                type="income"
+                value={historicalIncome}
+                valueLabel="Ventas"
+              />
+              <MetricSparklineCard
+                currency
+                data={historicalExpensesSparklineData}
+                title="Gastos históricos"
+                type="expense"
+                value={historicalExpenses}
+                valueLabel="Gastos"
+              />
+              <MetricSparklineCard
+                currency
+                data={historicalBusinessSparklineData}
+                title="Dinero del negocio"
+                type="business"
+                value={historicalBusinessMoney}
+                valueLabel="Negocio"
+              />
+              <MetricSparklineCard
+                currency
+                data={historicalProfitSparklineData}
+                title="Ganancia histórica"
+                type="profit"
+                value={historicalProfit}
+                valueLabel="Después de salario"
+              />
+            </div>
+            <MetricDonutCard
+              currency
+              emptyMessage="Aún no hay ventas históricas para componer."
+              segments={historicalMoneyComposition.segments}
+              subtitle="Desde el primer registro"
+              title="Composición histórica del dinero"
+              totalLabel="Ventas"
+              totalValue={historicalMoneyComposition.total}
+            />
+            <MetricDonutCard
+              currency
+              emptyMessage="Aún no hay ventas históricas por servicio."
+              segments={historicalServiceContribution.segments}
+              subtitle="Porcentaje de ventas por servicio"
+              title="Aporte histórico por servicio"
+              totalLabel="Ventas"
+              totalValue={historicalServiceContribution.total}
+            />
             <ExpensesByCategoryChart data={historicalCategoryExpenseData} />
-            <TopServicesChart data={servicesByCountData} metric="count" />
-            <TopServicesChart data={servicesByRevenueData} metric="revenue" />
           </>
         ) : null}
       </div>

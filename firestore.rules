@@ -136,6 +136,9 @@ service cloud.firestore {
     function validFixedExpense(data) {
       return isNonEmptyString(data.name)
         && isZeroOrPositiveNumber(data.amount)
+        && (!('categoryId' in data) || data.categoryId == null || isNonEmptyString(data.categoryId))
+        && (!('categoryName' in data) || data.categoryName == null || isNonEmptyString(data.categoryName))
+        && (!('dueDay' in data) || data.dueDay == null || (data.dueDay is number && data.dueDay >= 1 && data.dueDay <= 31))
         && data.isActive is bool;
     }
 

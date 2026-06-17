@@ -1,6 +1,6 @@
 import { getDoc, serverTimestamp, writeBatch, type Firestore } from "firebase/firestore";
-import { defaultBusinessId, businessDoc, categoryDoc, financialSettingsDoc, fixedExpenseDoc, personalExpenseCategoryDoc, serviceDoc, userDoc } from "../../../shared/lib/firestorePaths";
-import type { ExpenseCategory, FixedExpense, PersonalExpenseCategory, Service } from "../../../shared/types/domain";
+import { defaultBusinessId, businessDoc, categoryDoc, financialSettingsDoc, fixedExpenseDoc, personalExpenseCategoryDoc, rawMaterialDoc, serviceDoc, userDoc } from "../../../shared/lib/firestorePaths";
+import type { ExpenseCategory, FixedExpense, PersonalExpenseCategory, RawMaterial, Service } from "../../../shared/types/domain";
 import { defaultCategories, defaultFixedExpenses, defaultPersonalExpenseCategories, defaultServices } from "../constants/defaultSeeds";
 
 type InitializeUserBusinessInput = {
@@ -14,12 +14,14 @@ type InitializeUserBusinessInput = {
   fixedExpenses?: FixedExpenseSeedInput[];
   categories?: CategorySeedInput[];
   personalExpenseCategories?: PersonalExpenseCategorySeedInput[];
+  rawMaterials?: RawMaterialSeedInput[];
 };
 
-type ServiceSeedInput = Pick<Service, "id" | "name" | "defaultPrice" | "estimatedCost" | "isActive">;
+type ServiceSeedInput = Pick<Service, "id" | "name" | "defaultPrice" | "estimatedCost" | "costCalculationMode" | "isActive">;
 type FixedExpenseSeedInput = Pick<FixedExpense, "id" | "name" | "amount" | "isActive">;
 type CategorySeedInput = Pick<ExpenseCategory, "id" | "name" | "color" | "isActive">;
 type PersonalExpenseCategorySeedInput = Pick<PersonalExpenseCategory, "id" | "name" | "color" | "isActive">;
+type RawMaterialSeedInput = Pick<RawMaterial, "id" | "name" | "measurementType" | "purchaseQuantity" | "purchaseUnit" | "baseQuantity" | "baseUnit" | "purchasePrice"> & { isActive: boolean };
 
 type InitializeUserBusinessResult = {
   success: true;
@@ -130,6 +132,7 @@ export async function initializeUserBusiness(
         name: service.name.trim(),
         defaultPrice: service.defaultPrice,
         estimatedCost: service.estimatedCost,
+        costCalculationMode: service.costCalculationMode ?? "manual",
         isActive: service.isActive,
         createdAt: timestamp,
         updatedAt: timestamp,
@@ -152,7 +155,37 @@ export async function initializeUserBusiness(
     );
   });
 
+  (input.rawMaterials ?? []).forEach((material) => {
+    const baseQuantity = convertToBaseQuantity(material.purchaseQuantity, material.purchaseUnit);
+    const baseUnit = material.baseUnit;
+    batch.set(
+      rawMaterialDoc(input.db, uid, material.id),
+      {
+        name: material.name.trim(),
+        measurementType: material.measurementType,
+        purchaseQuantity: material.purchaseQuantity,
+        purchaseUnit: material.purchaseUnit,
+        baseQuantity,
+        baseUnit,
+        purchasePrice: material.purchasePrice,
+        unitCost: baseQuantity > 0 ? material.purchasePrice / baseQuantity : 0,
+        stockQuantity: baseQuantity,
+        isActive: material.isActive,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      },
+      { merge: true },
+    );
+  });
+
   await batch.commit();
 
   return { success: true, businessId: defaultBusinessId, alreadyInitialized: false };
+}
+
+function convertToBaseQuantity(quantity: number, unit: string): number {
+  if (unit === "l" || unit === "kg") {
+    return quantity * 1000;
+  }
+  return quantity;
 }
